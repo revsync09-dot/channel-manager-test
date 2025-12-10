@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ guild.get('name') }} - {{ brand_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#8B5CF6',
+                            600: '#7C3AED',
+                            700: '#5B21B6',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="min-h-screen bg-slate-950 text-white p-6 space-y-8">
+    <header class="glass-panel rounded-3xl p-8 flex flex-wrap gap-6 justify-between">
+        <div>
+            <p class="text-sm text-slate-400 uppercase tracking-widest mb-2">Guild Overview</p>
+            <h1 class="text-3xl font-semibold mb-2">{{ guild.get('name') }}</h1>
+            <p class="text-slate-400">Guild ID: {{ guild.get('id') }} • Owner ID: {{ guild.get('owner_id', 'Unknown') }}</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <p class="font-semibold">{{ user.global_name or user.username }}</p>
+                <p class="text-sm text-slate-400">{{ bot_status.cluster }} • {{ bot_status.version }}</p>
+            </div>
+            <img src="{{ avatar_url }}" alt="Profile" class="h-14 w-14 rounded-2xl border border-white/10">
+        </div>
+    </header>
+
+    <section class="grid gap-6 xl:grid-cols-3">
+        <div class="rounded-3xl border border-white/5 p-6 bg-black/40">
+            <h2 class="text-xl font-semibold mb-4">Configuration</h2>
+            <dl class="space-y-3 text-sm text-slate-300">
+                <div class="flex justify-between"><dt>Prefix</dt><dd>{{ config.get('prefix', '!') }}</dd></div>
+                <div class="flex justify-between"><dt>Modlog Channel</dt><dd>{{ config.get('modlog_channel_id', 'Not set') }}</dd></div>
+                <div class="flex justify-between"><dt>Welcome Channel</dt><dd>{{ config.get('welcome_channel_id', 'Not set') }}</dd></div>
+                <div class="flex justify-between"><dt>Auto Role</dt><dd>{{ config.get('auto_role_id', 'Disabled') }}</dd></div>
+                <div class="flex justify-between"><dt>Leveling</dt><dd>{{ 'Enabled' if config.get('leveling_enabled', True) else 'Disabled' }}</dd></div>
+            </dl>
+        </div>
+        <div class="rounded-3xl border border-white/5 p-6 bg-black/40">
+            <h2 class="text-xl font-semibold mb-4">Bot Status</h2>
+            <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex justify-between"><span>Cluster</span><span>{{ bot_status.cluster }}</span></li>
+                <li class="flex justify-between"><span>Region</span><span>{{ bot_status.region }}</span></li>
+                <li class="flex justify-between"><span>Latency</span><span>{{ bot_status.latency }}</span></li>
+                <li class="flex justify-between"><span>Uptime</span><span>{{ bot_status.uptime }}</span></li>
+            </ul>
+        </div>
+        <div class="rounded-3xl border border-white/5 p-6 bg-gradient-to-br from-brand-500 to-indigo-500">
+            <h2 class="text-xl font-semibold mb-2">Owner Logging</h2>
+            <p class="text-sm text-white/70 mb-4">Latest secure actions for this guild.</p>
+            <ul class="space-y-3">
+                {% for log in owner_logs[:3] %}
+                    <li class="p-3 rounded-2xl bg-black/20">
+                        <p class="font-semibold">{{ log.title }}</p>
+                        <p class="text-sm text-white/80">{{ log.detail }}</p>
+                        <p class="text-xs text-white/70 mt-1">{{ log.timestamp }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-3xl border border-white/5 p-6 bg-black/30">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Custom Commands</h2>
+                <span class="text-sm text-slate-400">{{ custom_commands|length }} entries</span>
+            </div>
+            {% if custom_commands %}
+                <div class="space-y-4">
+                    {% for command in custom_commands %}
+                        <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
+                            <p class="font-semibold">/{{ command.command_name }}</p>
+                            <p class="text-sm text-slate-300 mt-1">{{ command.response }}</p>
+                            <p class="text-xs text-slate-500 mt-2">Embed: {{ 'Yes' if command.embed else 'No' }} • Created {{ command.created_at }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-slate-400 text-sm">No custom commands have been configured for this guild yet.</p>
+            {% endif %}
+        </div>
+        <div class="rounded-3xl border border-white/5 p-6 bg-black/30 space-y-5">
+            <div>
+                <h2 class="text-xl font-semibold mb-3">Server Tools</h2>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="p-4 rounded-2xl bg-white/5">
+                        <p class="text-sm text-slate-400 uppercase tracking-widest">Verification</p>
+                        <p class="text-2xl font-semibold mt-2">{{ 'Ready' if config.get('verify_configs') else 'Not configured' }}</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-white/5">
+                        <p class="text-sm text-slate-400 uppercase tracking-widest">Tickets</p>
+                        <p class="text-2xl font-semibold mt-2">{{ 'Queued' if config.get('ticket_category_id') else 'Disabled' }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="rounded-2xl border border-white/10 p-5 bg-gradient-to-br from-zinc-900 to-black">
+                <p class="text-sm text-slate-400 uppercase tracking-widest mb-2">Need assistance?</p>
+                <h3 class="text-2xl font-semibold mb-2">Join the support channel</h3>
+                <p class="text-sm text-slate-300 mb-4">We are one click away when you need help configuring {{ brand_name }}.</p>
+                <a href="{{ support_invite }}" target="_blank" class="inline-flex px-5 py-2.5 rounded-2xl bg-gradient-to-r from-brand-500 to-indigo-500 font-semibold">
+                    Open Support
+                </a>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

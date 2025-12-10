@@ -1,0 +1,53 @@
+name: Discord Change Log
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build payload
+        id: payload
+        run: |
+          COMMITS=$(jq -c '[.commits[] | {message: .message, author: .author.username, id: .id, url: .url}]' "$GITHUB_EVENT_PATH")
+          COUNT=$(echo "$COMMITS" | jq 'length')
+          MESSAGES=$(echo "$COMMITS" | jq -r '.[0:5][]?.message' | sed 's/"/\\"/g' | sed 's/^/- `&`/g' | paste -sd '\n' -)
+          HEAD_MSG=$(echo "$COMMITS" | jq -r '.[0].message // "Update"')
+          ACTOR="${{ github.actor }}"
+          BRANCH="${{ github.ref_name }}"
+          EVENT="${{ github.event_name }}"
+
+          cat <<EOF > payload.json
+          {
+            "username": "Channel Manager Bot",
+            "embeds": [
+              {
+                "title": "🛰️ Repo Update",
+                "description": "Event: ${EVENT} on **${BRANCH}**",
+                "color": 2278750,
+                "fields": [
+                  { "name": "Commits", "value": "${COUNT}", "inline": true },
+                  { "name": "Actor", "value": "${ACTOR}", "inline": true },
+                  { "name": "Head", "value": "${HEAD_MSG}", "inline": false },
+                  { "name": "Summary", "value": "${MESSAGES:-`No commit messages`}" }
+                ],
+                "footer": { "text": "Automated change log • Channel Manager" },
+                "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+              }
+            ]
+          }
+          EOF
+      - name: Send to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "No DISCORD_WEBHOOK_URL secret set; skipping notification."
+            exit 0
+          fi
+          curl -X POST -H "Content-Type: application/json" -d @payload.json "$WEBHOOK_URL"
