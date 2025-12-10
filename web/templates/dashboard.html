@@ -44,7 +44,7 @@
                         {% endif %}
                     </div>
                     <ul class="space-y-1.5">
-                        {% for item in section.items %}
+                        {% for item in section['items'] %}
                             <li>
                                 <a href="#" class="flex items-center justify-between px-3 py-2 rounded-xl {{ 'bg-white/5 text-white' if item.active else 'text-slate-400 hover:text-white hover:bg-white/5' }} transition">
                                     <span>{{ item.label }}</span>
@@ -248,3 +248,4 @@
     </section>
 </body>
 </html>
+
