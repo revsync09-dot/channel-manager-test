@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ brand_name }} - Developer Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#8B5CF6',
+                            600: '#7C3AED',
+                            700: '#5B21B6',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="min-h-screen bg-slate-950 text-white p-6 space-y-8">
+    {% set dev = translations.developer %}
+    <header class="glass-panel rounded-3xl p-8 flex flex-wrap gap-6 justify-between">
+        <div>
+            <p class="text-sm text-slate-400 uppercase tracking-widest mb-2">{{ dev.system_health or 'System Health' }}</p>
+            <h1 class="text-3xl font-semibold mb-2">{{ brand_name }}</h1>
+            <p class="text-slate-400 text-sm">{{ dev.global_metrics or 'Global health metrics and IPC overview' }}</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('dashboard') }}" class="px-4 py-2 rounded-xl border border-white/10 hover:border-white/30 transition text-sm">Back to Dashboard</a>
+            <a href="{{ support_invite }}" target="_blank" class="px-4 py-2 rounded-xl border border-white/10 hover:border-white/30 transition text-sm">Support</a>
+        </div>
+    </header>
+
+    <section class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-5">
+        <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+            <p class="text-sm text-slate-400">{{ dev.guilds or 'Guilds' }}</p>
+            <p class="text-3xl font-semibold">{{ stats.guild_count }}</p>
+        </div>
+        <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+            <p class="text-sm text-slate-400">{{ dev.users or 'Users' }}</p>
+            <p class="text-3xl font-semibold">{{ stats.user_count }}</p>
+        </div>
+        <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+            <p class="text-sm text-slate-400">{{ dev.commands or 'Commands Run' }}</p>
+            <p class="text-3xl font-semibold">{{ stats.total_commands_run }}</p>
+        </div>
+        <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+            <p class="text-sm text-slate-400">{{ dev.latency or 'Latency' }}</p>
+            <p class="text-3xl font-semibold">{{ stats.latency_ms }} ms</p>
+        </div>
+        <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+            <p class="text-sm text-slate-400">{{ dev.uptime or 'Uptime' }}</p>
+            <p class="text-3xl font-semibold">{{ stats.uptime }}</p>
+        </div>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-3">
+        <div class="rounded-3xl border border-white/10 p-6 bg-black/30">
+            <h2 class="text-xl font-semibold mb-4">{{ dev.resource_usage or 'Resource Usage' }}</h2>
+            <dl class="space-y-3 text-sm text-slate-300">
+                <div class="flex justify-between">
+                    <dt>{{ dev.cpu or 'CPU Load' }}</dt>
+                    <dd>{{ resource_snapshot.cpu }}%</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt>{{ dev.ram or 'RAM Usage' }}</dt>
+                    <dd>{{ resource_snapshot.ram }}%</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt>DB Size</dt>
+                    <dd>{{ resource_snapshot.db_size }} MB</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt>{{ dev.latency or 'Latency' }}</dt>
+                    <dd>{{ resource_snapshot.latency }} ms</dd>
+                </div>
+            </dl>
+            <p class="text-xs text-slate-500 mt-4">{{ dev.uptime or 'Uptime' }}: {{ resource_snapshot.uptime }}</p>
+        </div>
+        <div class="rounded-3xl border border-white/10 p-6 bg-black/30">
+            <h2 class="text-xl font-semibold mb-4">{{ dev.task_breakdown or 'Global Tasks' }}</h2>
+            <ul class="space-y-3 text-sm text-slate-300">
+                <li class="flex justify-between"><span>Ticket Systems</span><span>{{ task_summary.ticket_configs }}</span></li>
+                <li class="flex justify-between"><span>Active ModMail</span><span>{{ task_summary.active_modmail }}</span></li>
+                <li class="flex justify-between"><span>Active Giveaways</span><span>{{ task_summary.active_giveaways }}</span></li>
+                <li class="flex justify-between"><span>Verification Panels</span><span>{{ task_summary.verify_panels }}</span></li>
+                <li class="flex justify-between"><span>Custom Commands</span><span>{{ task_summary.custom_commands }}</span></li>
+                <li class="flex justify-between"><span>Pending IPC Jobs</span><span>{{ task_summary.pending_ipc }}</span></li>
+            </ul>
+        </div>
+        <div class="rounded-3xl border border-white/10 p-6 bg-black/30">
+            <h2 class="text-xl font-semibold mb-4">{{ dev.system_health or 'System Health' }}</h2>
+            <div class="flex items-end gap-2 h-48">
+                {% set max_value = activity_max or 1 %}
+                {% for point in activity_series %}
+                    {% set height = ((point.value or 0) / max_value) * 100 %}
+                    <div class="flex flex-col items-center flex-1">
+                        <div class="w-4 rounded-full bg-gradient-to-t from-brand-500 to-purple-300" style="height: {{ 6 if height < 6 else height }}%"></div>
+                        <span class="text-[10px] text-slate-500 mt-2">{{ point.label }}</span>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-slate-400">No activity data.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-3xl border border-white/10 p-6 bg-black/30">
+            <h2 class="text-xl font-semibold mb-3">{{ dev.guild_inventory or 'Guild Inventory' }}</h2>
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+                {% for guild in guilds %}
+                    <div class="p-3 rounded-2xl border border-white/10 flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold">{{ guild.name }}</p>
+                            <p class="text-xs text-slate-500">{{ guild.id }}</p>
+                        </div>
+                        <span class="text-sm text-slate-400">{{ guild.approximate_member_count or guild.member_count or 'N/A' }} members</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="rounded-3xl border border-white/10 p-6 bg-black/30">
+            <h2 class="text-xl font-semibold mb-3">{{ dev.ipc_queue or 'IPC Queue' }}</h2>
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+                {% for job in ipc_jobs %}
+                    <div class="p-3 rounded-2xl border border-white/10">
+                        <div class="flex items-center justify-between text-sm">
+                            <p class="font-semibold">{{ job.setup_type }}</p>
+                            <span class="text-xs text-slate-400">{{ job.created_at }}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Guild: {{ job.guild_id }} - Status: {{ 'Processed' if job.processed else 'Pending' }}</p>
+                        {% if job.data %}
+                            <pre class="text-xs text-slate-400 mt-2">{{ job.data }}</pre>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="rounded-3xl border border-white/10 p-6 bg-black/30">
+        <h2 class="text-xl font-semibold mb-3">{{ dev.modmail_threads or 'Recent ModMail Threads' }}</h2>
+        <div class="grid gap-3 md:grid-cols-2">
+            {% for thread in modmail_threads %}
+                <div class="p-3 rounded-2xl border border-white/10">
+                    <p class="font-semibold">Thread #{{ thread.id }}</p>
+                    <p class="text-sm text-slate-400">Guild: {{ thread.guild_id }} | User: {{ thread.user_id }}</p>
+                    <p class="text-sm text-slate-400">Status: {{ thread.status }}</p>
+                    <p class="text-xs text-slate-500">Created: {{ thread.created_at }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+</body>
+</html>

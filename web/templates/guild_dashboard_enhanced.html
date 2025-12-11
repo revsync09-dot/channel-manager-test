@@ -27,12 +27,12 @@
         <div>
             <p class="text-sm text-slate-400 uppercase tracking-widest mb-2">Guild Overview</p>
             <h1 class="text-3xl font-semibold mb-2">{{ guild.get('name') }}</h1>
-            <p class="text-slate-400">Guild ID: {{ guild.get('id') }} • Owner ID: {{ guild.get('owner_id', 'Unknown') }}</p>
+            <p class="text-slate-400">Guild ID: {{ guild.get('id') }} &bull; Owner ID: {{ guild.get('owner_id', 'Unknown') }}</p>
         </div>
         <div class="flex items-center gap-4">
             <div class="text-right">
                 <p class="font-semibold">{{ user.global_name or user.username }}</p>
-                <p class="text-sm text-slate-400">{{ bot_status.cluster }} • {{ bot_status.version }}</p>
+                <p class="text-sm text-slate-400">{{ bot_status.cluster }} &bull; {{ bot_status.version }}</p>
             </div>
             <img src="{{ avatar_url }}" alt="Profile" class="h-14 w-14 rounded-2xl border border-white/10">
         </div>
@@ -85,7 +85,7 @@
                         <div class="p-4 rounded-2xl bg-white/5 border border-white/10">
                             <p class="font-semibold">/{{ command.command_name }}</p>
                             <p class="text-sm text-slate-300 mt-1">{{ command.response }}</p>
-                            <p class="text-xs text-slate-500 mt-2">Embed: {{ 'Yes' if command.embed else 'No' }} • Created {{ command.created_at }}</p>
+                            <p class="text-xs text-slate-500 mt-2">Embed: {{ 'Yes' if command.embed else 'No' }} &bull; Created {{ command.created_at }}</p>
                         </div>
                     {% endfor %}
                 </div>

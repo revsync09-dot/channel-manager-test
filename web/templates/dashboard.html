@@ -39,24 +39,17 @@
                 <div class="space-y-3">
                     <div>
                         <div class="flex items-center justify-between">
-                            <p class="text-xs uppercase tracking-widest text-slate-400">{{ section.title }}</p>
-                            {% if section.badge %}
-                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/60">{{ section.badge }}</span>
-                            {% endif %}
+                            <p class="text-xs uppercase tracking-widest text-slate-400">{{ translations.sidebar.sections.get(section.title, section.title.replace('_',' ').title()) }}</p>
                         </div>
-                        <p class="text-[13px] text-slate-500 mt-1">{{ section.description }}</p>
+                        <p class="text-[13px] text-slate-500 mt-1">{{ translations.sidebar.descriptions.get(section.description, '') }}</p>
                     </div>
                     <ul class="space-y-1.5">
-                        {% for item in section["items"] %}
+                        {% for item in section.items %}
                             <li class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition">
                                 <div class="flex items-center justify-between">
-                                    <span class="font-medium">{{ item.label }}</span>
-                                    <span class="text-[11px] text-slate-400">{{ item.perm }}</span>
+                                    <span class="font-medium">{{ translations.sidebar.items.get(item.key, item.key.replace('_', ' ').title()) }}</span>
+                                    <span class="text-[11px] text-slate-500">{{ item.key }}</span>
                                 </div>
-                                <p class="text-xs text-slate-400 mt-1">{{ item.description }}</p>
-                                {% if item.supports_modal %}
-                                    <span class="text-[10px] uppercase tracking-widest text-emerald-400">Modal</span>
-                                {% endif %}
                             </li>
                         {% endfor %}
                     </ul>
@@ -66,7 +59,8 @@
         <div class="p-6 border-t border-white/5">
             <div class="rounded-2xl p-4 bg-white/5 border border-white/10 text-sm space-y-3">
                 <p class="text-xs uppercase tracking-widest text-slate-400">Support</p>
-                <p class="text-slate-300">Fragen? Spring direkt in den Bot-Support.</p>
+                {% set dashboard_copy = translations.dashboard %}
+                <p class="text-slate-300">{{ dashboard_copy.get('need_help', 'Need help? Jump into the bot support server.') }}</p>
                 <a href="{{ support_invite }}" target="_blank" class="inline-flex justify-center items-center rounded-xl bg-gradient-to-r from-brand-500 to-indigo-500 py-2.5 font-semibold">
                     Support Channel
                 </a>
@@ -78,12 +72,23 @@
     <section class="flex-1 flex flex-col">
         <header class="p-6 border-b border-white/5 flex flex-wrap gap-4 justify-between items-center">
             <div>
-                <p class="text-sm text-slate-400">{{ brand_name }} &bull; Overview</p>
+                <p class="text-sm text-slate-400">{{ brand_name }} &bull; Overview{% if developer_mode %} &mdash; Developer Mode{% endif %}</p>
                 <h1 class="text-3xl font-semibold">Dashboard Overview</h1>
                 <p class="text-slate-400 text-sm mt-1">{{ tagline }}</p>
             </div>
             <div class="flex items-center gap-4">
+                <form method="POST" action="{{ url_for('set_locale') }}" class="flex items-center">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label class="sr-only" for="locale-select">Locale</label>
+                    <select id="locale-select" name="locale" class="bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand-500" onchange="this.form.submit()">
+                        {% for code in languages %}
+                            <option value="{{ code }}" {% if code == active_locale %}selected{% endif %}>{{ code.upper() }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
                 <a href="{{ support_invite }}" target="_blank" class="px-4 py-2 rounded-xl border border-white/10 hover:border-white/30 transition text-sm">Support</a>
+                <form method="POST" action="{{ url_for('dashboard_command_request') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="command" value="/health">
                     <input type="hidden" name="guild_id" value="{{ guilds[0].id if guilds else '' }}">
                     <button type="submit" class="px-4 py-2 rounded-xl border border-white/10 hover:border-white/30 transition flex items-center gap-2 text-sm">
@@ -125,6 +130,34 @@
                         <p class="text-xs text-emerald-400 mt-3">{{ card.delta }}</p>
                     </div>
                 {% endfor %}
+            </section>
+
+            <!-- Live statistics auto-refresh section -->
+            <section class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+                    <p class="text-sm text-slate-400">Guild Count</p>
+                    <p class="text-3xl font-semibold" id="live-guilds">--</p>
+                </div>
+                <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+                    <p class="text-sm text-slate-400">User Count</p>
+                    <p class="text-3xl font-semibold" id="live-users">--</p>
+                </div>
+                <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+                    <p class="text-sm text-slate-400">Commands Run</p>
+                    <p class="text-3xl font-semibold" id="live-commands">--</p>
+                </div>
+                <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+                    <p class="text-sm text-slate-400">Latency</p>
+                    <p class="text-3xl font-semibold" id="live-latency">--</p>
+                </div>
+                <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+                    <p class="text-sm text-slate-400">Uptime</p>
+                    <p class="text-3xl font-semibold" id="live-uptime">--</p>
+                </div>
+                <div class="rounded-2xl border border-white/5 bg-black/30 p-5">
+                    <p class="text-sm text-slate-400">CPU / RAM</p>
+                    <p class="text-3xl font-semibold"><span id="live-cpu">--</span>% / <span id="live-ram">--</span>%</p>
+                </div>
             </section>
 
             <!-- Activity + summaries -->
@@ -243,11 +276,41 @@
                 </div>
             </section>
 
+            {% if module_cards and guilds %}
+            <section class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-semibold">Modules</h2>
+                    <p class="text-sm text-slate-400">Manage each feature per guild.</p>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    {% for module in module_cards %}
+                        <div class="rounded-2xl border border-white/10 p-4 bg-white/5 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-semibold">{{ module.title }}</h3>
+                                <p class="text-sm text-slate-400">{{ module.description }}</p>
+                            </div>
+                            <div class="mt-4">
+                                {% if guilds %}
+                                    <a href="{{ url_for('module_dashboard_view', guild_id=guilds[0].id, module_slug=module.slug) }}" class="inline-flex items-center px-3 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-indigo-500 font-semibold text-sm">
+                                        Open for {{ guilds[0].name }}
+                                    </a>
+                                {% else %}
+                                    <p class="text-xs text-slate-500">Add the bot to a guild to manage this module.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
             <!-- Command launcher + library -->
             <section class="grid gap-6 xl:grid-cols-3">
                 <div class="rounded-2xl border border-white/5 p-6 bg-black/30">
                     <h2 class="text-2xl font-semibold mb-2">Command Launcher</h2>
-                    <p class="text-sm text-slate-400 mb-4">Plane Slash-Commands direkt aus dem Dashboard. Der Bot liest die Queue und wendet die Aktionen im jeweiligen Server an.</p>
+                    <p class="text-sm text-slate-400 mb-4">Queue slash commands directly from the dashboard. The bot reads the pending list and executes them inside the selected guild.</p>
+                    <form method="POST" action="{{ url_for('dashboard_command_request') }}" class="space-y-4">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <div>
                             <label class="text-xs uppercase tracking-widest text-slate-400">Command</label>
                             <select name="command" class="w-full mt-1 bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm focus:border-brand-500 focus:outline-none">
@@ -270,14 +333,14 @@
                         </div>
                         <div>
                             <label class="text-xs uppercase tracking-widest text-slate-400">Payload / Notes</label>
-                            <textarea name="payload" rows="4" class="w-full mt-1 bg-transparent border border-white/10 rounded-2xl px-3 py-2 text-sm focus:border-brand-500 focus:outline-none" placeholder='Optional JSON oder kurze Notizen (z. B. {"channel": "123"})'></textarea>
+                            <textarea name="payload" rows="4" class="w-full mt-1 bg-transparent border border-white/10 rounded-2xl px-3 py-2 text-sm focus:border-brand-500 focus:outline-none" placeholder='Optional JSON or notes (e.g. {&quot;channel&quot;: &quot;123&quot;})'></textarea>
                         </div>
                         <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-brand-500 to-indigo-500 py-2.5 font-semibold">Queue Command</button>
                     </form>
                 </div>
                 <div class="xl:col-span-2 rounded-2xl border border-white/5 p-6 grid gap-4">
                     <h2 class="text-2xl font-semibold">Command Library</h2>
-                    <p class="text-sm text-slate-400 mb-4">Alle Slash-Commands deines Bots, gruppiert nach Feature. Nutze den Launcher links oder kopiere dir Beschreibungen für dein Team.</p>
+                    <p class="text-sm text-slate-400 mb-4">All slash commands grouped by module. Use the launcher on the left or copy descriptions for your team.</p>
                     <div class="grid gap-4 md:grid-cols-2">
                         {% for group in command_groups %}
                             <div class="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
@@ -307,5 +370,32 @@
             </section>
         </main>
     </section>
+    <script>
+        async function refreshLiveStats() {
+            try {
+                const response = await fetch('{{ url_for("api_live_bot") }}');
+                if (!response.ok) return;
+                const data = await response.json();
+                const setText = (id, value) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value;
+                };
+                const fmt = (value) => typeof value === 'number' ? value.toFixed(1) : value ?? '--';
+                setText('live-guilds', data.guild_count ?? '--');
+                setText('live-users', data.user_count ?? '--');
+                setText('live-commands', data.total_commands_run ?? '--');
+                setText('live-latency', data.latency_ms ? data.latency_ms + 'ms' : '--');
+                setText('live-uptime', data.uptime ?? '--');
+                setText('live-cpu', fmt(data.cpu_usage));
+                setText('live-ram', fmt(data.ram_usage));
+            } catch (err) {
+                console.error('Failed to refresh live stats', err);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshLiveStats();
+            setInterval(refreshLiveStats, 10000);
+        });
+    </script>
 </body>
 </html>
