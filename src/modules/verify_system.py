@@ -1,11 +1,17 @@
 from typing import Any, Dict
 
+import os
 import discord
+
+DEFAULT_VERIFY_BANNER = os.getenv(
+    "DASHBOARD_LOGO_URL",
+    "https://cdn.discordapp.com/attachments/1443222738750668952/1448482674477105362/image.png?ex=693b6c1d&is=693a1a9d&hm=ff31f492a74f0315498dee8ee26fa87b8512ddbee617f4bccda1161f59c8cb49&",
+)
 
 VERIFY_DEFAULT: Dict[str, Any] = {
     "unverifiedRole": None,
     "verifiedRole": None,
-    "bannerUrl": None,
+    "bannerUrl": DEFAULT_VERIFY_BANNER,
     "footerText": None,
     "title": "Verify to access",
     "description": "Click verify to unlock chat access. This keeps the server safe from spam.",
@@ -36,7 +42,7 @@ def update_verify_config(guild_id: int | None, config: Dict[str, Any]) -> None:
 
 def _sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
     banner = config.get("bannerUrl")
-    config["bannerUrl"] = banner or None
+    config["bannerUrl"] = banner or DEFAULT_VERIFY_BANNER
     footer = config.get("footerText")
     if footer:
         config["footerText"] = str(footer)[:120]
@@ -63,14 +69,14 @@ def build_verify_embed(config: Dict[str, Any]) -> discord.Embed:
         description=config.get("description") or VERIFY_DEFAULT["description"],
         color=0x22C55E,
     )
-    banner = config.get("bannerUrl")
+    banner = config.get("bannerUrl") or DEFAULT_VERIFY_BANNER
     if banner and _is_image_link(banner):
         embed.set_image(url=str(banner))
     footer = config.get("footerText")
     if footer:
-        embed.set_footer(text=str(footer)[:120])
+        embed.set_footer(text=str(footer)[:120], icon_url=DEFAULT_VERIFY_BANNER)
     else:
-        embed.set_footer(text="Channel Manager Verification")
+        embed.set_footer(text="Channel Manager Verification", icon_url=DEFAULT_VERIFY_BANNER)
     return embed
 
 

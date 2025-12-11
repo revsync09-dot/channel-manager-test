@@ -45,6 +45,10 @@ RULES_ACCENT_COLOR = 0x9C66FF  # Purple accent similar to screenshot
 EMBED_THUMB = (
     "https://media.discordapp.net/attachments/1443222738750668952/1446618834638471259/Channel-manager.png"
 )
+BRAND_LOGO_URL = os.getenv(
+    "DASHBOARD_LOGO_URL",
+    "https://cdn.discordapp.com/attachments/1443222738750668952/1448482674477105362/image.png?ex=693b6c1d&is=693a1a9d&hm=ff31f492a74f0315498dee8ee26fa87b8512ddbee617f4bccda1161f59c8cb49&",
+)
 MAX_CHANNELS = 500
 MAX_ROLES = 200
 STARTED_AT = discord.utils.utcnow()
@@ -1960,7 +1964,6 @@ if not TOKEN:
     sys.exit(1)
 
 bot.run(TOKEN)
-
 
 
 

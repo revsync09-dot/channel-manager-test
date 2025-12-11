@@ -1,11 +1,17 @@
 from typing import Any, Dict
 
+import os
 import discord
+
+DEFAULT_VERIFY_BANNER = os.getenv(
+    "DASHBOARD_LOGO_URL",
+    "https://cdn.discordapp.com/attachments/1443222738750668952/1448482674477105362/image.png?ex=693b6c1d&is=693a1a9d&hm=ff31f492a74f0315498dee8ee26fa87b8512ddbee617f4bccda1161f59c8cb49&",
+)
 
 VERIFY_DEFAULT: Dict[str, Any] = {
     "unverifiedRole": None,
     "verifiedRole": None,
-    "bannerUrl": None,
+    "bannerUrl": DEFAULT_VERIFY_BANNER,
     "footerText": None,
 }
 
