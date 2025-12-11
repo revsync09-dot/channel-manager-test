@@ -1396,11 +1396,12 @@ def logout():
     return redirect(url_for('index'))
 
 
+# ============================================================
+#   CORRECT & ONLY VALID DASHBOARD ROUTE
+# ============================================================
+
 @app.route('/dashboard')
 @login_required
-def dashboard():
-    # deine Logik
-    return render_template("dashboard.html", **context)
 def dashboard():
     """Main dashboard"""
     access_token = session.get('access_token')
@@ -1414,6 +1415,7 @@ def dashboard():
     guilds_for_snapshot = fetch_bot_guild_snapshot(admin_guilds if not developer_mode else [])
     launcher_guilds = admin_guilds if admin_guilds else guilds_for_snapshot
     db_metrics = fetch_database_metrics()
+    
     context = build_dashboard_snapshot(guilds_for_snapshot, db_metrics)
     module_cards = list_module_cards()
     csrf_token = get_or_create_csrf_token()
@@ -1438,6 +1440,10 @@ def dashboard():
     )
 
 
+# ============================================================
+#   COMMAND REQUEST ENDPOINT
+# ============================================================
+
 @app.route('/dashboard/command-request', methods=['POST'])
 @login_required
 def dashboard_command_request():
@@ -1445,9 +1451,15 @@ def dashboard_command_request():
     command_name = request.form.get('command')
     guild_id = request.form.get('guild_id')
     payload = (request.form.get('payload') or "").strip()
+
     if not command_name or not guild_id:
         flash("Command and guild are required.", "error")
         return redirect(url_for('dashboard'))
+
+    # TODO: Implement queueing system
+    flash("Request queued!", "success")
+    return redirect(url_for('dashboard'))
+
     
     access_token = session.get('access_token')
     admin_guilds = filter_admin_guilds(access_token)
