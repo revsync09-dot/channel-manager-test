@@ -31,7 +31,7 @@
         </div>
         <div class="flex items-center gap-4">
             <a href="{{ url_for('dashboard') }}" class="px-4 py-2 rounded-xl border border-white/10 hover:border-white/30 transition text-sm">Back to Dashboard</a>
-            <img src="{{ avatar_url if avatar_url else url_for('static', filename='assets/logo.png') }}" alt="Avatar" class="h-14 w-14 rounded-2xl border border-white/10">
+            <img src="{{ avatar_url if avatar_url else brand_logo_url }}" alt="Avatar" class="h-14 w-14 rounded-2xl border border-white/10">
         </div>
     </header>
 

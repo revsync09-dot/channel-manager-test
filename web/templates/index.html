@@ -24,8 +24,8 @@
 </head>
 <body class="min-h-screen bg-slate-950 text-white grid place-items-center p-6 overflow-hidden aurora">
     <div class="absolute top-6 left-6 flex items-center space-x-3">
-        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-500 grid place-items-center text-xl font-semibold">
-            {{ brand_name.split()[0][0] if brand_name else 'CM' }}
+        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-500 grid place-items-center overflow-hidden">
+            <img src="{{ brand_logo_url }}" alt="{{ brand_name }} logo" class="h-10 w-10 object-cover rounded-xl">
         </div>
         <div>
             <p class="text-sm text-slate-400 uppercase tracking-widest">Dashboard</p>
