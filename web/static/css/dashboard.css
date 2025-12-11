@@ -39,6 +39,147 @@ body {
   position: relative;
 }
 
+.apex-dashboard {
+  gap: 0;
+}
+
+.apex-sidebar {
+  width: 340px;
+  background: var(--panel-strong);
+  border-right: 1px solid var(--border);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  z-index: 2;
+}
+
+.apex-main {
+  flex: 1;
+  padding: 2rem;
+  min-height: 100vh;
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.apex-branding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.apex-branding img {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.35);
+}
+
+.apex-session-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.session-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.6rem;
+}
+
+.apex-btn {
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+  text-align: center;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.apex-btn.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #050505;
+  border: none;
+}
+
+.apex-btn.subtle {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.apex-nav-groups {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.apex-nav-group {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.apex-nav-group:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.apex-nav-title {
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 0.35rem;
+}
+
+.apex-nav-copy {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.9rem;
+}
+
+.apex-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.apex-nav-item {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+  padding: 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.apex-nav-item:hover {
+  border-color: rgba(139, 92, 246, 0.6);
+  transform: translateX(4px);
+}
+
+.apex-sidebar-footer {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .ambient-grid,
 .particle-overlay {
   position: absolute;
@@ -329,6 +470,38 @@ body {
   box-shadow: 0 35px 90px rgba(0, 0, 0, 0.35);
 }
 
+.hero-summit {
+  border: 1px solid var(--border);
+  border-radius: 32px;
+  padding: 2.25rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(3, 5, 15, 0.9));
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.35);
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) 320px;
+  gap: 2rem;
+}
+
+.hero-summit-status {
+  display: grid;
+  gap: 1rem;
+}
+
+.summit-card {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 1.1rem;
+  background: rgba(1, 3, 10, 0.55);
+}
+
+.locale-form select {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
 .hero-copy h1 {
   margin: 0.25rem 0;
   font-size: 2.6rem;
@@ -424,6 +597,26 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+.workflow-lane {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .integration-card {
@@ -584,6 +777,24 @@ body {
   gap: 1rem;
 }
 
+.insight-stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.chart-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
 .chart-card {
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -691,6 +902,102 @@ body {
   gap: 1.5rem;
 }
 
+.live-config-lab {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 380px);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.config-console,
+.ops-card {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1.5rem;
+}
+
+.config-subcopy {
+  color: var(--text-soft);
+  margin-bottom: 1rem;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.config-grid label,
+.textarea-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.config-grid input,
+.textarea-field textarea,
+.ops-card select,
+.ops-card textarea,
+.ops-card input {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-primary);
+  padding: 0.65rem;
+}
+
+.ops-console {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.sync-pill {
+  margin-top: 1rem;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-soft);
+}
+
+.sync-pill.loading {
+  color: var(--accent-2);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.sync-pill.ready {
+  color: var(--accent-3);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.sync-pill.error {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.announcement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+
 .command-launcher form {
   display: flex;
   flex-direction: column;
@@ -738,6 +1045,61 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1rem;
   background: rgba(255, 255, 255, 0.02);
+}
+
+.command-forge {
+  margin-top: 1.5rem;
+}
+
+.command-filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.command-filter-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.command-filter-chip.active {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: var(--accent-2);
+}
+
+.command-forge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.command-forge-card {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.2rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.command-shortcut {
+  margin-top: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--accent-2);
+  font-size: 0.8rem;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.command-shortcut:hover {
+  border-color: rgba(56, 189, 248, 0.6);
 }
 
 .command-group-head {
@@ -877,6 +1239,13 @@ body {
     flex-direction: column;
   }
 
+  .apex-sidebar {
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
   .command-dock {
     width: 100%;
     flex-direction: row;
@@ -894,7 +1263,15 @@ body {
     padding: 1.5rem;
   }
 
+  .apex-main {
+    padding: 1.5rem;
+  }
+
   .command-lab {
+    grid-template-columns: 1fr;
+  }
+
+  .live-config-lab {
     grid-template-columns: 1fr;
   }
 }
@@ -902,6 +1279,10 @@ body {
 @media (max-width: 640px) {
   .hero-zone {
     padding: 1.5rem;
+  }
+
+  .hero-summit {
+    grid-template-columns: 1fr;
   }
 
   .hero-copy h1 {

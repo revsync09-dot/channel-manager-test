@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ brand_name }} &middot; Mission Control</title>
+    <title>{{ brand_name }} &middot; Control Surface</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -11,7 +11,7 @@
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
-<body class="dashboard-body pro-dashboard">
+<body class="dashboard-body apex-dashboard">
     <div class="ambient-grid" aria-hidden="true"></div>
     <div class="particle-overlay" aria-hidden="true"></div>
     {% set session_display_name = user.get('global_name') or user.get('username') %}
@@ -19,55 +19,57 @@
     <div class="loading-overlay" id="dashboardLoader">
         <div class="loader-core">
             <span class="loader-ring"></span>
-            <p>Booting up your command surface...</p>
+            <p>Booting up your control deck...</p>
         </div>
     </div>
 
-    <aside class="command-dock">
-        <div class="dock-header">
-            <div class="dock-logo">
-                <img src="{{ brand_logo_url }}" alt="{{ brand_name }}">
-                <div>
-                    <p class="dock-label">Operations Stack</p>
-                    <h2>{{ brand_name }}</h2>
-                </div>
+    <aside class="apex-sidebar" aria-label="Primary navigation">
+        <div class="apex-branding">
+            <img src="{{ brand_logo_url }}" alt="{{ brand_name }}">
+            <div>
+                <p class="dock-label">Operations Deck</p>
+                <h2>{{ brand_name }}</h2>
             </div>
             <span class="status-chip ghost">{{ bot_status['cluster'] }}</span>
         </div>
-        <div class="dock-session">
+        <div class="apex-session-card">
             <div class="session-user">
-                <img src="{{ avatar_url }}" alt="User">
+                <img src="{{ avatar_url }}" alt="User avatar">
                 <div>
-                    <p class="session-label">Signed in as</p>
+                    <p class="session-label">Signed in</p>
                     <h3>{{ session_display_name }}</h3>
-                    <p class="session-subtext">OAuth session active</p>
+                    <p class="session-subtext">OAuth handshake active</p>
                 </div>
             </div>
-            <div class="session-meta">
+            <div class="session-meta wide">
                 <span>Last refresh {{ bot_status['refreshed'] }}</span>
                 <span>Latency {{ bot_status['latency'] }}</span>
+                <span>Guilds {{ guilds|length }}</span>
+            </div>
+            <div class="session-actions">
+                <a class="apex-btn primary" href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Invite bot</a>
+                <a class="apex-btn subtle" href="{{ url_for('login') }}">OAuth login</a>
             </div>
             {% if developer_mode %}
                 <p class="session-alert">Developer mode enabled</p>
             {% endif %}
         </div>
-        <nav class="dock-nav">
+        <nav class="apex-nav-groups">
             {% for section in nav_sections %}
                 {% set section_title_key = section['title'] %}
                 {% set section_desc_key = section['description'] %}
                 {% set section_default_title = section_title_key | replace('_',' ') | title %}
                 {% set section_title = translations['sidebar']['sections'].get(section_title_key, section_default_title) %}
                 {% set section_copy = translations['sidebar']['descriptions'].get(section_desc_key, '') %}
-                <div class="dock-group">
-                    <p class="dock-group-title">{{ section_title }}</p>
-                    <p class="dock-group-copy">{{ section_copy }}</p>
-                    <div class="dock-items">
+                <div class="apex-nav-group">
+                    <p class="apex-nav-title">{{ section_title }}</p>
+                    <p class="apex-nav-copy">{{ section_copy }}</p>
+                    <div class="apex-nav-items">
                         {% for item in section['items'] %}
                             {% set item_key = item['key'] %}
                             {% set default_label = item_key | replace('_',' ') | title %}
                             {% set item_label = translations['sidebar']['items'].get(item_key, default_label) %}
-                            {% set icon_letter = item_label[0] %}
-                            <button type="button" class="dock-item" data-icon="{{ icon_letter }}">
+                            <button type="button" class="apex-nav-item" data-target="{{ item_key }}">
                                 <span>{{ item_label }}</span>
                                 <span class="dock-item-meta">{{ item_key | replace('_',' ') }}</span>
                             </button>
@@ -76,164 +78,70 @@
                 </div>
             {% endfor %}
         </nav>
-        <div class="dock-footer">
+        <div class="apex-sidebar-footer">
             <a href="{{ support_invite }}" target="_blank" class="support-link">Support Hub</a>
             <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
         </div>
     </aside>
 
-    <main class="dashboard-main">
-        <header class="hero-zone">
-            <div class="hero-copy">
-                <p class="hero-meta">{{ brand_name }} Control &middot; Cluster {{ bot_status['cluster'] }}</p>
-                <h1>Next-gen Discord mission control</h1>
+    <main class="apex-main">
+        <header class="hero-summit" id="overview">
+            <div class="hero-summit-primary">
+                <p class="hero-meta">Mission Control &middot; Cluster {{ bot_status['cluster'] }}</p>
+                <h1>Build one of the cleanest Discord dashboards on the planet.</h1>
                 <p>{{ tagline }}</p>
                 <div class="hero-chips">
-                    <span class="status-chip">v{{ bot_status['version'] }}</span>
+                    <span class="status-chip">{{ bot_status['version'] }}</span>
                     <span class="status-chip ghost">{{ bot_status['region'] }}</span>
                     {% if developer_mode %}
                         <span class="status-chip accent">Developer Mode</span>
                     {% endif %}
                 </div>
+                <div class="hero-actions">
+                    <a class="primary-btn" href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Invite bot</a>
+                    <a class="primary-btn ghost" href="{{ url_for('login') }}">OAuth portal</a>
+                    <a class="primary-btn ghost" href="{{ url_for('command_center') }}">Command Studio</a>
+                    <form method="POST" action="{{ url_for('set_locale') }}" class="locale-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <label class="sr-only" for="locale-select">Locale</label>
+                        <select name="locale" id="locale-select" onchange="this.form.submit()">
+                            {% for code in languages %}
+                                <option value="{{ code }}" {% if code == active_locale %}selected{% endif %}>{{ code.upper() }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
             </div>
-            <div class="hero-actions">
-                <a class="primary-btn" href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Invite bot</a>
-                <a class="primary-btn ghost" href="{{ url_for('login') }}">OAuth portal</a>
-                <a class="primary-btn ghost" href="{{ url_for('command_center') }}">Command Studio</a>
-                <form method="POST" action="{{ url_for('set_locale') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <label class="sr-only" for="locale-select">Locale</label>
-                    <select name="locale" id="locale-select" onchange="this.form.submit()">
-                        {% for code in languages %}
-                            <option value="{{ code }}" {% if code == active_locale %}selected{% endif %}>{{ code.upper() }}</option>
-                        {% endfor %}
-                    </select>
-                </form>
-                <form method="POST" action="{{ url_for('dashboard_command_request') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="command" value="/health">
-                    <input type="hidden" name="guild_id" value="{{ guilds[0].id if guilds else '' }}">
-                    <button type="submit" class="ghost-btn">
-                        <span>Refresh status</span>
-                    </button>
-                </form>
-            </div>
-            <div class="hero-panels">
-                <article class="hero-card">
+            <div class="hero-summit-status">
+                <article class="summit-card">
                     <p class="card-label">OAuth session</p>
                     <h3>{{ session_display_name }}</h3>
-                    <p>Active identity token synced across {{ guilds|length }} guilds.</p>
+                    <p>Identity synced across {{ guilds|length }} guilds.</p>
                 </article>
-                <article class="hero-card">
-                    <p class="card-label">Pending jobs</p>
-                    <h3>{{ metrics['pending_requests'] or 0 }}</h3>
-                    <p>Queued setup requests waiting for bot workers.</p>
-                </article>
-                <article class="hero-card">
-                    <p class="card-label">Uptime &amp; latency</p>
+                <article class="summit-card">
+                    <p class="card-label">Live uptime</p>
                     <h3>{{ bot_status['uptime'] }}</h3>
                     <p>{{ bot_status['latency'] }} &middot; {{ bot_status['region'] }}</p>
+                </article>
+                <article class="summit-card">
+                    <p class="card-label">Pending jobs</p>
+                    <h3>{{ metrics['pending_requests'] or 0 }}</h3>
+                    <p>Queued workflows ready to push to the bot.</p>
                 </article>
             </div>
         </header>
 
-        <section class="integration-grid">
-            <article class="integration-card invite">
-                <div>
-                    <p class="card-label">Invite pipeline</p>
-                    <h3>Deploy the bot in one click</h3>
-                    <p>Provision the bot with administrator scope and get teammates inside instantly.</p>
-                </div>
-                <a href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Generate invite</a>
-            </article>
-            <article class="integration-card oauth">
-                <div>
-                    <p class="card-label">OAuth authority</p>
-                    <h3>Session secured via Discord</h3>
-                    <p>All dashboard actions respect Discord OAuth scopes, session refresh, and CSRF protection.</p>
-                </div>
-                <a href="{{ url_for('login') }}">Re-authorize</a>
-            </article>
-            {% set first_owner_log = owner_logs[0] if owner_logs else None %}
-            <article class="integration-card logging">
-                <div>
-                    <p class="card-label">Owner logging</p>
-                    <h3>{{ first_owner_log['title'] if first_owner_log else 'Audit feed' }}</h3>
-                    <p>{{ first_owner_log['detail'] if first_owner_log else 'Live audit messages keep you informed.' }}</p>
-                </div>
-                <a href="#owner-logs">View log</a>
-            </article>
-        </section>
-
-        <section class="panel server-panel" id="servers">
-            <div class="panel-head">
-                <div>
-                    <p class="card-label">Connected guilds</p>
-                    <h2>Server atlas</h2>
-                </div>
-                <div class="server-filters">
-                    <input type="text" id="serverSearch" placeholder="Search servers">
-                    <select id="serverCategory">
-                        <option value="all">All</option>
-                        <option value="owner">Owner</option>
-                        <option value="admin">Bot Master</option>
-                    </select>
-                </div>
-            </div>
-            <div class="server-grid" id="serverGrid">
-                {% if guilds %}
-                    {% for guild in guilds %}
-                        {% set icon_hash = guild.get('icon') %}
-                        {% set guild_id = guild.get('id') %}
-                        {% set guild_name = guild.get('name') %}
-                        {% if icon_hash %}
-                            {% set icon_url = 'https://cdn.discordapp.com/icons/' ~ guild_id ~ '/' ~ icon_hash ~ '.png?size=128' %}
-                        {% else %}
-                            {% set icon_url = None %}
-                        {% endif %}
-                        {% set owner_tag = 'Server Admin' %}
-                        {% if guild.get('owner') or guild.get('is_admin') %}
-                            {% set owner_tag = 'Server Owner' %}
-                        {% elif guild.get('has_manage_guild') %}
-                            {% set owner_tag = 'Bot Master' %}
-                        {% endif %}
-                        <article class="server-card" data-name="{{ guild_name|lower if guild_name else '' }}">
-                            <div class="server-top">
-                                {% if icon_url %}
-                                    <img src="{{ icon_url }}" alt="{{ guild_name }}">
-                                {% else %}
-                                    <div class="avatar-fallback">{{ guild_name[:2] if guild_name else 'SV' }}</div>
-                                {% endif %}
-                                <div>
-                                    <h3>{{ guild_name }}</h3>
-                                    <p>{{ owner_tag }}</p>
-                                </div>
-                            </div>
-                            <div class="server-meta">
-                                {% set approx_members = guild.get('approximate_member_count') %}
-                                {% set displayed_members = approx_members if approx_members is not none else guild.get('member_count') %}
-                                <span>Members {{ displayed_members or '&mdash;' }}</span>
-                                <a href="{{ url_for('guild_dashboard', guild_id=guild_id) }}" class="hover-glow-btn">Open</a>
-                            </div>
-                        </article>
-                    {% endfor %}
-                {% else %}
-                    <p class="empty-copy">Invite the bot to a server to unlock controls.</p>
-                {% endif %}
-            </div>
-        </section>
-
-        <section class="panel metric-panel">
-            <div class="metric-grid">
+        <section class="panel stat-deck" id="live">
+            <div class="stat-card-grid">
                 {% for card in overview_cards %}
-                    <article class="metric-card">
+                    <article class="stat-card">
                         <p class="metric-label">{{ card['label'] }}</p>
                         <p class="metric-value counter" data-count-target="{{ card['value'] | replace(',', '') }}">{{ card['value'] }}</p>
                         <p class="metric-delta">{{ card['delta'] }}</p>
                     </article>
                 {% endfor %}
             </div>
-            <div class="live-diagnostics">
+            <div class="live-diagnostics deck">
                 <article>
                     <p class="metric-label">Guild count</p>
                     <h3 id="live-guilds">--</h3>
@@ -261,97 +169,344 @@
             </div>
         </section>
 
-        <section class="panel charts-panel">
-            <div class="chart-card">
+        <section class="panel workflow-lane">
+            <article class="integration-card invite">
                 <div>
-                    <p class="card-label">30 day trend</p>
-                    <h3>Server growth</h3>
+                    <p class="card-label">Deploy bot</p>
+                    <h3>Invite the automation core</h3>
+                    <p>Full administrator + applications.commands scope in a single click.</p>
                 </div>
-                <canvas id="serverGrowthChart" height="320"></canvas>
+                <a href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Generate invite</a>
+            </article>
+            <article class="integration-card oauth">
+                <div>
+                    <p class="card-label">OAuth identity</p>
+                    <h3>Discord login keeps everything synced</h3>
+                    <p>Refresh tokens + CSRF ensure every change is secure.</p>
+                </div>
+                <a href="{{ url_for('login') }}">Re-authorize</a>
+            </article>
+            {% set first_owner_log = owner_logs[0] if owner_logs else None %}
+            <article class="integration-card logging">
+                <div>
+                    <p class="card-label">Owner feed</p>
+                    <h3>{{ first_owner_log['title'] if first_owner_log else 'Audit feed' }}</h3>
+                    <p>{{ first_owner_log['detail'] if first_owner_log else 'Live audit messages keep you informed.' }}</p>
+                </div>
+                <a href="#owner-logs">View log</a>
+            </article>
+        </section>
+
+        <section class="panel server-panel server-atlas" id="servers">
+            <div class="panel-head">
+                <div>
+                    <p class="card-label">Connected guilds</p>
+                    <h2>Server atlas</h2>
+                </div>
+                <div class="server-filters">
+                    <input type="text" id="serverSearchInput" placeholder="Search servers">
+                    <select id="serverRoleFilter">
+                        <option value="all">All</option>
+                        <option value="owner">Server Owner</option>
+                        <option value="bot_master">Bot Master</option>
+                    </select>
+                </div>
             </div>
-            <div class="chart-card">
-                <div>
-                    <p class="card-label">Community pulse</p>
-                    <h3>User activity</h3>
-                </div>
-                <canvas id="userActivityChart" height="320"></canvas>
-            </div>
-            <div class="chart-card">
-                <div>
-                    <p class="card-label">Feature mix</p>
-                    <h3>Utilization</h3>
-                </div>
-                <canvas id="subscriptionChart" height="320"></canvas>
+            <div class="server-grid" id="serverGrid">
+                {% if guilds %}
+                    {% for guild in guilds %}
+                        {% set icon_hash = guild.get('icon') %}
+                        {% set guild_id = guild.get('id') %}
+                        {% set guild_name = guild.get('name') %}
+                        {% if icon_hash %}
+                            {% set icon_url = 'https://cdn.discordapp.com/icons/' ~ guild_id ~ '/' ~ icon_hash ~ '.png?size=128' %}
+                        {% else %}
+                            {% set icon_url = None %}
+                        {% endif %}
+                        {% set owner_tag = 'Server Admin' %}
+                        {% set filter_tag = 'owner' %}
+                        {% if guild.get('owner') or guild.get('is_admin') %}
+                            {% set owner_tag = 'Server Owner' %}
+                            {% set filter_tag = 'owner' %}
+                        {% elif guild.get('has_manage_guild') %}
+                            {% set owner_tag = 'Bot Master' %}
+                            {% set filter_tag = 'bot_master' %}
+                        {% else %}
+                            {% set filter_tag = 'member' %}
+                        {% endif %}
+                        <article class="server-card" data-name="{{ guild_name|lower if guild_name else '' }}" data-role="{{ filter_tag }}">
+                            <div class="server-top">
+                                {% if icon_url %}
+                                    <img src="{{ icon_url }}" alt="{{ guild_name }}">
+                                {% else %}
+                                    <div class="avatar-fallback">{{ guild_name[:2] if guild_name else 'SV' }}</div>
+                                {% endif %}
+                                <div>
+                                    <h3>{{ guild_name }}</h3>
+                                    <p>{{ owner_tag }}</p>
+                                </div>
+                            </div>
+                            <div class="server-meta">
+                                {% set approx_members = guild.get('approximate_member_count') %}
+                                {% set displayed_members = approx_members if approx_members is not none else guild.get('member_count') %}
+                                <span>Members {{ displayed_members or '&mdash;' }}</span>
+                                <a href="{{ url_for('guild_dashboard', guild_id=guild_id) }}" class="hover-glow-btn">Open</a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                {% else %}
+                    <p class="empty-copy">Invite the bot to a server to unlock controls.</p>
+                {% endif %}
             </div>
         </section>
 
-        <section class="panel telemetry-panel">
-            <div class="activity-panel">
+        <section class="panel live-config-lab" id="config-lab">
+            <div class="config-console">
                 <div class="panel-head">
                     <div>
-                        <p class="card-label">Activity</p>
-                        <h3>Community timeline</h3>
+                        <p class="card-label">Instant config</p>
+                        <h2>Live sync to bot</h2>
                     </div>
-                    <span class="status-chip ghost">Today {{ metrics['activity_today']['chat'] + metrics['activity_today']['voice'] if metrics else 0 }} min</span>
+                    <div class="config-head-controls">
+                        <label class="sr-only" for="configGuildSelect">Guild</label>
+                        <select id="configGuildSelect">
+                            {% for guild in admin_guilds %}
+                                <option value="{{ guild.get('id') }}">{{ guild.get('name') }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-                <div class="activity-bars">
-                    {% set max_value = activity_max or 1 %}
-                    {% for point in activity_series %}
-                        {% set height = (point.value / max_value) * 100 %}
-                        <div class="activity-bar">
-                            <span class="bar" style="height: {{ height if height > 6 else 6 }}%"></span>
-                            <span class="bar-label">{{ point.label }}</span>
+                <p class="config-subcopy">Change a value and it syncs instantly to the guild config table. The bot listens for these updates and posts them in the channel you specify.</p>
+                <form id="liveConfigForm">
+                    <div class="config-grid">
+                        <label>
+                            <span>Prefix</span>
+                            <input type="text" placeholder="!" data-config-field="prefix">
+                        </label>
+                        <label>
+                            <span>Welcome channel ID</span>
+                            <input type="text" placeholder="123456789012345678" data-config-field="welcome_channel_id">
+                        </label>
+                        <label>
+                            <span>Mod-log channel ID</span>
+                            <input type="text" placeholder="987654321098765432" data-config-field="modlog_channel_id">
+                        </label>
+                        <label>
+                            <span>Auto role ID</span>
+                            <input type="text" placeholder="Role ID" data-config-field="auto_role_id">
+                        </label>
+                    </div>
+                    <label class="textarea-field">
+                        <span>Welcome message</span>
+                        <textarea rows="3" placeholder="Hey {user}, welcome aboard!" data-config-field="welcome_message"></textarea>
+                    </label>
+                    <label class="textarea-field">
+                        <span>Leave message</span>
+                        <textarea rows="3" placeholder="Bye {user}, hope to see you soon!" data-config-field="leave_message"></textarea>
+                    </label>
+                </form>
+                <div id="configSyncStatus" class="sync-pill">Select a guild to load configuration.</div>
+            </div>
+            <div class="ops-console">
+                <article class="ops-card">
+                    <div class="panel-head">
+                        <div>
+                            <p class="card-label">Quick actions</p>
+                            <h3>Queue slash command</h3>
                         </div>
-                    {% else %}
-                        <p class="empty-copy">No recent activity recorded.</p>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="owner-panel" id="owner-logs">
-                <div class="panel-head">
-                    <div>
-                        <p class="card-label">Owner logging</p>
-                        <h3>Audit feed</h3>
                     </div>
-                    <span class="status-chip">Live</span>
-                </div>
-                <ul>
-                    {% for log in owner_logs %}
-                        <li>
-                            <div>
-                                <strong>{{ log['title'] }}</strong>
-                                <p>{{ log['detail'] }}</p>
-                            </div>
-                            <div>
-                                <span>{{ log['status'] }}</span>
-                                <p>{{ log['timestamp'] }}</p>
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="command-panel">
-                <div class="panel-head">
-                    <div>
-                        <p class="card-label">Highlights</p>
-                        <h3>Command spotlight</h3>
-                    </div>
-                    <span class="status-chip ghost">{{ command_total }} commands</span>
-                </div>
-                <div class="command-highlight-grid">
-                    {% for highlight in command_sections %}
-                        <article>
-                            <h4>{{ highlight['title'] }}</h4>
-                            <ul>
-                                {% for cmd in highlight['commands'] %}
-                                    <li>
-                                        <span>{{ cmd['name'] }}</span>
-                                        <p>{{ cmd['description'] }}</p>
-                                    </li>
+                    <form id="quickCommandForm">
+                        <label>
+                            <span>Command</span>
+                            <select id="quickCommandSelect" name="command">
+                                {% for group in command_groups %}
+                                    <optgroup label="{{ group['name'] }}">
+                                        {% for command in group['commands'] %}
+                                            <option value="{{ command['name'] }}">{{ command['name'] }} &mdash; {{ command['description'] }}</option>
+                                        {% endfor %}
+                                    </optgroup>
                                 {% endfor %}
-                            </ul>
-                        </article>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Payload / Notes</span>
+                            <textarea name="payload" rows="3" placeholder="Optional JSON payload"></textarea>
+                        </label>
+                        <button type="submit" class="hover-glow-btn">Queue command</button>
+                    </form>
+                    <p id="quickCommandStatus" class="sync-pill muted">Idle</p>
+                </article>
+                <article class="ops-card">
+                    <div class="panel-head">
+                        <div>
+                            <p class="card-label">Broadcast</p>
+                            <h3>Send announcement</h3>
+                        </div>
+                    </div>
+                    <form id="announcementForm">
+                        <label>
+                            <span>Channel ID</span>
+                            <input type="text" name="channel_id" placeholder="123456789012345678">
+                        </label>
+                        <label>
+                            <span>Message</span>
+                            <textarea name="content" rows="3" placeholder="Drop your news..."></textarea>
+                        </label>
+                        <div class="announcement-grid">
+                            <label>
+                                <span>Type</span>
+                                <select name="type">
+                                    <option value="normal">Normal</option>
+                                    <option value="important">Important</option>
+                                    <option value="alert">Alert</option>
+                                </select>
+                            </label>
+                            <label class="checkbox-field">
+                                <input type="checkbox" name="mention_everyone">
+                                <span>Mention @everyone</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="hover-glow-btn">Push to bot</button>
+                    </form>
+                    <p id="announcementStatus" class="sync-pill muted">Ready</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel command-forge" id="commands">
+            <div class="panel-head">
+                <div>
+                    <p class="card-label">Command library</p>
+                    <h2>Slash command categories</h2>
+                </div>
+                <div class="command-filter-chips">
+                    <button type="button" class="command-filter-chip active" data-command-filter="all">All</button>
+                    {% for group in command_groups %}
+                        {% set module_slug = group['commands'][0]['module'] if group['commands'] else group['name'] %}
+                        <button type="button" class="command-filter-chip" data-command-filter="{{ module_slug }}">{{ group['name'] }}</button>
                     {% endfor %}
+                </div>
+            </div>
+            <div class="command-forge-grid">
+                {% for group in command_groups %}
+                    {% set module_slug = group['commands'][0]['module'] if group['commands'] else group['name'] %}
+                    <article class="command-forge-card" data-group="{{ module_slug }}">
+                        <div class="command-group-head">
+                            <div>
+                                <p class="card-label">{{ group['badge'] }}</p>
+                                <h3>{{ group['name'] }}</h3>
+                            </div>
+                            <span>{{ group['description'] }}</span>
+                        </div>
+                        <ul>
+                            {% for command in group['commands'] %}
+                                <li>
+                                    <div>
+                                        <strong>{{ command['name'] }}</strong>
+                                        <span>{{ command['permissions'] }}</span>
+                                    </div>
+                                    <p>{{ command['description'] }}</p>
+                                    <button type="button" class="command-shortcut" data-command-shortcut="{{ command['name'] }}">Queue</button>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel insight-stack" id="insights">
+            <div class="chart-matrix">
+                <article class="chart-card">
+                    <div>
+                        <p class="card-label">30 day trend</p>
+                        <h3>Server growth</h3>
+                    </div>
+                    <canvas id="serverGrowthChart" height="320"></canvas>
+                </article>
+                <article class="chart-card">
+                    <div>
+                        <p class="card-label">Community pulse</p>
+                        <h3>User activity</h3>
+                    </div>
+                    <canvas id="userActivityChart" height="320"></canvas>
+                </article>
+                <article class="chart-card">
+                    <div>
+                        <p class="card-label">Feature mix</p>
+                        <h3>Utilization</h3>
+                    </div>
+                    <canvas id="subscriptionChart" height="320"></canvas>
+                </article>
+            </div>
+            <div class="timeline-grid">
+                <div class="activity-panel">
+                    <div class="panel-head">
+                        <div>
+                            <p class="card-label">Activity</p>
+                            <h3>Community timeline</h3>
+                        </div>
+                        <span class="status-chip ghost">Today {{ metrics['activity_today']['chat'] + metrics['activity_today']['voice'] if metrics else 0 }} min</span>
+                    </div>
+                    <div class="activity-bars">
+                        {% set max_value = activity_max or 1 %}
+                        {% for point in activity_series %}
+                            {% set height = (point.value / max_value) * 100 %}
+                            <div class="activity-bar">
+                                <span class="bar" style="height: {{ height if height > 6 else 6 }}%"></span>
+                                <span class="bar-label">{{ point.label }}</span>
+                            </div>
+                        {% else %}
+                            <p class="empty-copy">No recent activity recorded.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="owner-panel" id="owner-logs">
+                    <div class="panel-head">
+                        <div>
+                            <p class="card-label">Owner logging</p>
+                            <h3>Audit feed</h3>
+                        </div>
+                        <span class="status-chip">Live</span>
+                    </div>
+                    <ul>
+                        {% for log in owner_logs %}
+                            <li>
+                                <div>
+                                    <strong>{{ log['title'] }}</strong>
+                                    <p>{{ log['detail'] }}</p>
+                                </div>
+                                <div>
+                                    <span>{{ log['status'] }}</span>
+                                    <p>{{ log['timestamp'] }}</p>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="command-panel">
+                    <div class="panel-head">
+                        <div>
+                            <p class="card-label">Highlights</p>
+                            <h3>Command spotlight</h3>
+                        </div>
+                        <span class="status-chip ghost">{{ command_total }} commands</span>
+                    </div>
+                    <div class="command-highlight-grid">
+                        {% for highlight in command_sections %}
+                            <article>
+                                <h4>{{ highlight['title'] }}</h4>
+                                <ul>
+                                    {% for cmd in highlight['commands'] %}
+                                        <li>
+                                            <span>{{ cmd['name'] }}</span>
+                                            <p>{{ cmd['description'] }}</p>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </article>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </section>
@@ -382,64 +537,6 @@
                 </div>
             </section>
         {% endif %}
-
-        <section class="panel command-lab" id="commands">
-            <div class="command-launcher">
-                <h2>Command launcher</h2>
-                <p>Queue slash commands directly from the dashboard.</p>
-                <form method="POST" action="{{ url_for('dashboard_command_request') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <label>Command</label>
-                    <select name="command">
-                        {% for group in command_groups %}
-                            <optgroup label="{{ group['name'] }}">
-                                {% for command in group['commands'] %}
-                                    <option value="{{ command['name'] }}">{{ command['name'] }} &mdash; {{ command['description'] }}</option>
-                                {% endfor %}
-                            </optgroup>
-                        {% endfor %}
-                    </select>
-                    <label>Guild</label>
-                    <select name="guild_id">
-                        {% for guild in admin_guilds %}
-                            <option value="{{ guild.get('id') }}">{{ guild.get('name') }}</option>
-                        {% endfor %}
-                    </select>
-                    <label>Payload / Notes</label>
-                    <textarea name="payload" rows="4" placeholder='Optional JSON payload (e.g. {&quot;channel&quot;: &quot;123&quot;})'></textarea>
-                    <button type="submit" class="hover-glow-btn">Queue command</button>
-                </form>
-            </div>
-            <div class="command-library">
-                <h2>Command library</h2>
-                <p>All slash commands grouped by module. Use them inside Discord or queue them here.</p>
-                <div class="command-library-grid">
-                    {% for group in command_groups %}
-                        <article>
-                            <div class="command-group-head">
-                                <h3>{{ group['name'] }}</h3>
-                                <span>{{ group['badge'] }}</span>
-                            </div>
-                            <p>{{ group['description'] }}</p>
-                            <ul>
-                                {% for command in group['commands'] %}
-                                    <li>
-                                        <div>
-                                            <strong>{{ command['name'] }}</strong>
-                                            <span>{{ command['permissions'] }}</span>
-                                        </div>
-                                        <p>{{ command['description'] }}</p>
-                                        {% if command.get('supports_modal') %}
-                                            <span class="tag">Modal</span>
-                                        {% endif %}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </article>
-                    {% endfor %}
-                </div>
-            </div>
-        </section>
 
         <section class="panel audit-panel" id="audit">
             <div class="panel-head">
@@ -483,9 +580,7 @@
             {% if messages %}
                 <section class="panel flash-panel">
                     {% for category, message in messages %}
-                        <div class="flash-message {% if category == 'error' %}error{% else %}success{% endif %}">
-                            {{ message }}
-                        </div>
+                        <div class="flash-message {% if category == 'error' %}error{% else %}success{% endif %}">{{ message }}</div>
                     {% endfor %}
                 </section>
             {% endif %}
@@ -495,6 +590,8 @@
     <script>
         const activitySeries = {{ activity_series | tojson }};
         const metricsData = {{ metrics | tojson }};
+        const csrfToken = '{{ csrf_token }}';
+
         function animateCounters() {
             document.querySelectorAll('.counter').forEach(counter => {
                 const target = parseFloat(counter.dataset.countTarget);
@@ -510,20 +607,19 @@
                 requestAnimationFrame(frame);
             });
         }
+
         function filterServers() {
-            const term = (document.getElementById('serverSearch')?.value || '').toLowerCase();
-            const filter = document.getElementById('serverCategory')?.value || 'all';
+            const searchEl = document.getElementById('serverSearchInput');
+            const filterEl = document.getElementById('serverRoleFilter');
+            const term = (searchEl && searchEl.value ? searchEl.value : '').toLowerCase();
+            const filter = filterEl && filterEl.value ? filterEl.value : 'all';
             document.querySelectorAll('#serverGrid .server-card').forEach(card => {
                 const matchesName = card.dataset.name.includes(term);
-                const tag = card.querySelector('.server-top p')?.textContent || '';
-                const matchesFilter = filter === 'all'
-                    ? true
-                    : (filter === 'owner' ? tag.includes('Owner') : tag.includes('Bot Master'));
+                const matchesFilter = filter === 'all' ? true : card.dataset.role === filter;
                 card.style.display = matchesName && matchesFilter ? '' : 'none';
             });
         }
-        document.getElementById('serverSearch')?.addEventListener('input', filterServers);
-        document.getElementById('serverCategory')?.addEventListener('change', filterServers);
+
         function initCharts() {
             const growthCtx = document.getElementById('serverGrowthChart');
             if (growthCtx && activitySeries.length) {
@@ -577,6 +673,7 @@
                 });
             }
         }
+
         async function refreshLiveStats() {
             try {
                 const response = await fetch('{{ url_for("api_live_bot") }}');
@@ -586,23 +683,228 @@
                     const el = document.getElementById(id);
                     if (el) el.textContent = value;
                 };
-                const fmt = (value) => typeof value === 'number' ? value.toFixed(1) : value ?? '--';
-                setText('live-guilds', data.guild_count ?? '--');
-                setText('live-users', data.user_count ?? '--');
-                setText('live-commands', data.total_commands_run ?? '--');
+        const fmt = (value) => typeof value === 'number' ? value.toFixed(1) : (value != null ? value : '--');
+        setText('live-guilds', data.guild_count != null ? data.guild_count : '--');
+        setText('live-users', data.user_count != null ? data.user_count : '--');
+        setText('live-commands', data.total_commands_run != null ? data.total_commands_run : '--');
                 setText('live-latency', data.latency_ms ? data.latency_ms + 'ms' : '--');
-                setText('live-uptime', data.uptime ?? '--');
+        setText('live-uptime', data.uptime != null ? data.uptime : '--');
                 setText('live-cpu', fmt(data.cpu_usage));
                 setText('live-ram', fmt(data.ram_usage));
             } catch (err) {
                 console.error('Failed to refresh live stats', err);
             }
         }
+
+        function setupCommandFilters() {
+            const chips = document.querySelectorAll('[data-command-filter]');
+            const cards = document.querySelectorAll('.command-forge-card');
+            if (!chips.length) return;
+            chips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const target = chip.dataset.commandFilter;
+                    chips.forEach(btn => btn.classList.toggle('active', btn === chip));
+                    cards.forEach(card => {
+                        const matches = target === 'all' || card.dataset.group === target;
+                        card.style.display = matches ? '' : 'none';
+                    });
+                });
+            });
+        }
+
+        function setupCommandShortcuts() {
+            const select = document.getElementById('quickCommandSelect');
+            if (!select) return;
+            document.querySelectorAll('[data-command-shortcut]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const cmd = button.dataset.commandShortcut;
+                    Array.from(select.options).forEach(opt => {
+                        if (opt.value === cmd) {
+                            select.value = opt.value;
+                        }
+                    });
+                    select.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            });
+        }
+
+        function setupLiveConfigLab() {
+            const guildSelect = document.getElementById('configGuildSelect');
+            const form = document.getElementById('liveConfigForm');
+            const statusEl = document.getElementById('configSyncStatus');
+            if (!guildSelect || !form) return;
+            const fields = Array.from(form.querySelectorAll('[data-config-field]'));
+            let saveTimeout;
+
+            const setStatus = (message, state = '') => {
+                if (!statusEl) return;
+                statusEl.textContent = message;
+                statusEl.classList.remove('error', 'loading', 'ready');
+                if (state) statusEl.classList.add(state);
+            };
+
+            const loadConfig = async (guildId) => {
+                if (!guildId) return;
+                setStatus('Loading configuration...', 'loading');
+                try {
+                    const response = await fetch(`/api/guild/${guildId}/config`);
+                    const data = response.ok ? await response.json() : {};
+                    fields.forEach(field => {
+                        const key = field.dataset.configField;
+                        field.value = data && Object.prototype.hasOwnProperty.call(data, key) ? data[key] : '';
+                    });
+                    setStatus('Live and ready. Any edit syncs instantly.', 'ready');
+                } catch (err) {
+                    console.error('Failed to load guild config', err);
+                    setStatus('Failed to load configuration.', 'error');
+                }
+            };
+
+            const saveConfig = async (guildId) => {
+                if (!guildId) return;
+                const payload = {};
+                fields.forEach(field => {
+                    payload[field.dataset.configField] = field.value ? field.value.trim() : '';
+                });
+                try {
+                    const response = await fetch(`/api/guild/${guildId}/config`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!response.ok) throw new Error('Sync failed');
+                    setStatus('Changes synced to bot listener.', 'ready');
+                } catch (err) {
+                    console.error('Failed to sync config', err);
+                    setStatus('Sync failed. Check permissions.', 'error');
+                }
+            };
+
+            const debouncedSave = () => {
+                const guildId = guildSelect.value;
+                if (!guildId) return;
+                setStatus('Syncing...', 'loading');
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => saveConfig(guildId), 700);
+            };
+
+            fields.forEach(field => field.addEventListener('input', debouncedSave));
+            guildSelect.addEventListener('change', (event) => {
+                loadConfig(event.target.value);
+            });
+
+            if (guildSelect.value) {
+                loadConfig(guildSelect.value);
+            } else {
+                setStatus('No admin guild available.', 'error');
+            }
+        }
+
+        function setupQuickCommandForm() {
+            const form = document.getElementById('quickCommandForm');
+            const guildSelect = document.getElementById('configGuildSelect');
+            const status = document.getElementById('quickCommandStatus');
+            if (!form || !guildSelect) return;
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const guildId = guildSelect.value;
+                if (!guildId) {
+                    status.textContent = 'Select a guild first.';
+                    status.classList.add('error');
+                    return;
+                }
+                const formData = new FormData(form);
+                const payload = {
+                    command: formData.get('command'),
+                    guild_id: guildId,
+                    payload: formData.get('payload') || null,
+                };
+                status.textContent = 'Queueing command...';
+                status.classList.remove('error');
+                try {
+                    const response = await fetch('{{ url_for("api_command_queue") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.error) {
+                        throw new Error(data.error || 'Queue failed');
+                    }
+                    status.textContent = 'Command queued. Bot will confirm in Discord.';
+                } catch (err) {
+                    console.error(err);
+                    status.textContent = 'Failed to queue command.';
+                    status.classList.add('error');
+                }
+            });
+        }
+
+        function setupAnnouncementForm() {
+            const form = document.getElementById('announcementForm');
+            const guildSelect = document.getElementById('configGuildSelect');
+            const status = document.getElementById('announcementStatus');
+            if (!form || !guildSelect) return;
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const guildId = guildSelect.value;
+                if (!guildId) {
+                    status.textContent = 'Select a guild first.';
+                    status.classList.add('error');
+                    return;
+                }
+                const formData = new FormData(form);
+                const payload = {
+                    channel_id: formData.get('channel_id'),
+                    content: formData.get('content'),
+                    type: formData.get('type'),
+                    mention_everyone: formData.get('mention_everyone') === 'on',
+                };
+                status.textContent = 'Sending announcement...';
+                status.classList.remove('error');
+                try {
+                    const response = await fetch(`/api/guild/${guildId}/announcement`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.error) {
+                        throw new Error(data.error || 'Announcement failed');
+                    }
+                    status.textContent = 'Announcement queued. Bot will post it in Discord.';
+                } catch (err) {
+                    console.error(err);
+                    status.textContent = 'Failed to send announcement.';
+                    status.classList.add('error');
+                }
+            });
+        }
+
+        const searchInput = document.getElementById('serverSearchInput');
+        const roleFilter = document.getElementById('serverRoleFilter');
+        if (searchInput) searchInput.addEventListener('input', filterServers);
+        if (roleFilter) roleFilter.addEventListener('change', filterServers);
+
         document.addEventListener('DOMContentLoaded', () => {
             animateCounters();
             initCharts();
             filterServers();
             refreshLiveStats();
+            setupCommandFilters();
+            setupCommandShortcuts();
+            setupLiveConfigLab();
+            setupQuickCommandForm();
+            setupAnnouncementForm();
             setInterval(refreshLiveStats, 10000);
             setTimeout(() => document.getElementById('dashboardLoader').classList.add('hide'), 500);
         });
