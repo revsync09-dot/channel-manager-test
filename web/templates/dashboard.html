@@ -3,75 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ brand_name }} - Overview</title>
+    <title>{{ brand_name }} &middot; Mission Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        tailwind.config = {
-            theme: { extend: {} }
-        };
+        tailwind.config = { theme: { extend: {} } };
     </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
-<body class="dashboard-body">
+<body class="dashboard-body pro-dashboard">
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="particle-overlay" aria-hidden="true"></div>
+
     <div class="loading-overlay" id="dashboardLoader">
-        <div class="orbital-loader"></div>
-        <p>Initializing control room...</p>
-    </div>
-    <aside class="neon-sidebar hidden lg:flex flex-col">
-        <div class="sidebar-logo">
-            <img src="{{ brand_logo_url }}" alt="{{ brand_name }} logo">
-            <div>
-                <p class="text-xs tracking-[0.3em] text-slate-400 uppercase">Main Cluster</p>
-                <h2 class="text-xl font-semibold">{{ brand_name }}</h2>
-            </div>
+        <div class="loader-core">
+            <span class="loader-ring"></span>
+            <p>Booting up your command surface...</p>
         </div>
-        <div class="sidebar-scroll">
+    </div>
+
+    <aside class="command-dock">
+        <div class="dock-header">
+            <div class="dock-logo">
+                <img src="{{ brand_logo_url }}" alt="{{ brand_name }}">
+                <div>
+                    <p class="dock-label">Operations Stack</p>
+                    <h2>{{ brand_name }}</h2>
+                </div>
+            </div>
+            <span class="status-chip ghost">{{ bot_status.cluster }}</span>
+        </div>
+        <div class="dock-session">
+            <div class="session-user">
+                <img src="{{ avatar_url }}" alt="User">
+                <div>
+                    <p class="session-label">Signed in as</p>
+                    <h3>{{ user.global_name or user.username }}</h3>
+                    <p class="session-subtext">OAuth session active</p>
+                </div>
+            </div>
+            <div class="session-meta">
+                <span>Last refresh {{ bot_status.refreshed }}</span>
+                <span>Latency {{ bot_status.latency }}</span>
+            </div>
+            {% if developer_mode %}
+                <p class="session-alert">Developer mode enabled</p>
+            {% endif %}
+        </div>
+        <nav class="dock-nav">
             {% for section in nav_sections %}
-                <div class="sidebar-section">
-                    <p class="sidebar-section-title">{{ translations.sidebar.sections.get(section.title, section.title.replace('_',' ').title()) }}</p>
-                    <p class="text-[13px] text-slate-500 mb-2">{{ translations.sidebar.descriptions.get(section.description, '') }}</p>
-                    <div class="sidebar-items">
-                        {% for item in section['items'] %}
-                           {% set icon_letter = translations.sidebar['items'].get(item.key, item.key.replace('_', ' ').title())[0] %}
-                            <div class="sidebar-item" data-icon="{{ icon_letter }}">
-                                {{ translations.sidebar['items'].get(item.key, item.key.replace('_', ' ').title()) }}
-                                <span>{{ item.key }}</span>
-                            </div>
+                <div class="dock-group">
+                    {% set section_title = translations.sidebar.sections.get(section.title, section.title.replace('_',' ').title()) %}
+                    {% set section_copy = translations.sidebar.descriptions.get(section.description, '') %}
+                    <p class="dock-group-title">{{ section_title }}</p>
+                    <p class="dock-group-copy">{{ section_copy }}</p>
+                    <div class="dock-items">
+                        {% for item in section.items %}
+                            {% set item_label = translations.sidebar.items.get(item.key, item.key.replace('_',' ').title()) %}
+                            {% set icon_letter = item_label[0] %}
+                            <button type="button" class="dock-item" data-icon="{{ icon_letter }}">
+                                <span>{{ item_label }}</span>
+                                <span class="dock-item-meta">{{ item.key.replace('_',' ') }}</span>
+                            </button>
                         {% endfor %}
                     </div>
                 </div>
             {% endfor %}
-        </div>
-        <div class="sidebar-support">
-            <div class="support-card">
-                <p class="text-xs tracking-[0.35em] uppercase text-slate-300">Support</p>
-                {% set dashboard_copy = translations.dashboard %}
-                <p class="text-sm text-slate-100 mt-2">{{ dashboard_copy.get('need_help', 'Need help? Jump into the bot support server.') }}</p>
-                <a href="{{ support_invite }}" target="_blank">Open Support</a>
-            </div>
+        </nav>
+        <div class="dock-footer">
+            <a href="{{ support_invite }}" target="_blank" class="support-link">Support Hub</a>
+            <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
         </div>
     </aside>
 
-    <section class="main-shell">
-        <header class="top-bar">
-            <div>
-                <p class="text-sm text-slate-400 flex items-center gap-2">
-                    {{ brand_name }} &middot; Control Room
-                    {% if developer_mode %}
-                        <span class="version-chip bg-[rgba(255,106,213,0.16)] border-[rgba(255,106,213,0.4)] text-[var(--neon-pink)]">Developer Mode</span>
-                    {% endif %}
-                </p>
-                <h1>Dashboard Overview</h1>
+    <main class="dashboard-main">
+        <header class="hero-zone">
+            <div class="hero-copy">
+                <p class="hero-meta">{{ brand_name }} Control &middot; Cluster {{ bot_status.cluster }}</p>
+                <h1>Next-gen Discord mission control</h1>
                 <p>{{ tagline }}</p>
+                <div class="hero-chips">
+                    <span class="status-chip">v{{ bot_status.version }}</span>
+                    <span class="status-chip ghost">{{ bot_status.region }}</span>
+                    {% if developer_mode %}
+                        <span class="status-chip accent">Developer Mode</span>
+                    {% endif %}
+                </div>
             </div>
-            <div class="top-actions">
-                <span class="version-chip">v{{ bot_status.version }}</span>
-                <a class="invite-btn" href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Invite Bot</a>
+            <div class="hero-actions">
+                <a class="primary-btn" href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Invite bot</a>
+                <a class="primary-btn ghost" href="{{ url_for('login') }}">OAuth portal</a>
+                <a class="primary-btn ghost" href="#owner-logs">Audit logging</a>
                 <form method="POST" action="{{ url_for('set_locale') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <label class="sr-only" for="locale-select">Locale</label>
-                    <select id="locale-select" name="locale" class="language-select" onchange="this.form.submit()">
+                    <select name="locale" id="locale-select" onchange="this.form.submit()">
                         {% for code in languages %}
                             <option value="{{ code }}" {% if code == active_locale %}selected{% endif %}>{{ code.upper() }}</option>
                         {% endfor %}
@@ -82,355 +108,378 @@
                     <input type="hidden" name="command" value="/health">
                     <input type="hidden" name="guild_id" value="{{ guilds[0].id if guilds else '' }}">
                     <button type="submit" class="ghost-btn">
-                        <span>Refresh</span>
+                        <span>Refresh status</span>
                     </button>
                 </form>
-                <div class="flex items-center gap-3">
-                    <div class="text-right">
-                        <p class="text-sm font-semibold">{{ user.global_name or user.username }}</p>
-                        <p class="text-xs text-slate-400">{{ bot_status.cluster }}</p>
-                    </div>
-                    <div class="relative">
-                        <img src="{{ avatar_url }}" class="h-12 w-12 rounded-2xl border border-white/10" alt="Profile">
-                        <span class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 status-dot"></span>
-                    </div>
-                </div>
+            </div>
+            <div class="hero-panels">
+                <article class="hero-card">
+                    <p class="card-label">OAuth session</p>
+                    <h3>{{ user.global_name or user.username }}</h3>
+                    <p>Active identity token synced across {{ guilds|length }} guilds.</p>
+                </article>
+                <article class="hero-card">
+                    <p class="card-label">Pending jobs</p>
+                    <h3>{{ metrics.pending_requests or 0 }}</h3>
+                    <p>Queued setup requests waiting for bot workers.</p>
+                </article>
+                <article class="hero-card">
+                    <p class="card-label">Uptime &amp; latency</p>
+                    <h3>{{ bot_status.uptime }}</h3>
+                    <p>{{ bot_status.latency }} &middot; {{ bot_status.region }}</p>
+                </article>
             </div>
         </header>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="px-6 pt-4 space-y-2">
-                    {% for category, message in messages %}
-                        <div class="rounded-2xl px-4 py-3 text-sm {% if category == 'error' %}bg-red-500/10 text-red-200 border border-red-500/30{% else %}bg-emerald-500/10 text-emerald-200 border border-emerald-500/30{% endif %}">
-                            {{ message }}
-                        </div>
+        <section class="integration-grid">
+            <article class="integration-card invite">
+                <div>
+                    <p class="card-label">Invite pipeline</p>
+                    <h3>Deploy the bot in one click</h3>
+                    <p>Provision the bot with administrator scope and get teammates inside instantly.</p>
+                </div>
+                <a href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Generate invite</a>
+            </article>
+            <article class="integration-card oauth">
+                <div>
+                    <p class="card-label">OAuth authority</p>
+                    <h3>Session secured via Discord</h3>
+                    <p>All dashboard actions respect Discord OAuth scopes, session refresh, and CSRF protection.</p>
+                </div>
+                <a href="{{ url_for('login') }}">Re-authorize</a>
+            </article>
+            <article class="integration-card logging">
+                <div>
+                    <p class="card-label">Owner logging</p>
+                    <h3>{{ owner_logs[0].title if owner_logs else 'Audit feed' }}</h3>
+                    <p>{{ owner_logs[0].detail if owner_logs else 'Live audit messages keep you informed.' }}</p>
+                </div>
+                <a href="#owner-logs">View log</a>
+            </article>
+        </section>
+
+        <section class="panel server-panel" id="servers">
+            <div class="panel-head">
+                <div>
+                    <p class="card-label">Connected guilds</p>
+                    <h2>Server atlas</h2>
+                </div>
+                <div class="server-filters">
+                    <input type="text" id="serverSearch" placeholder="Search servers">
+                    <select id="serverCategory">
+                        <option value="all">All</option>
+                        <option value="owner">Owner</option>
+                        <option value="admin">Bot Master</option>
+                    </select>
+                </div>
+            </div>
+            <div class="server-grid" id="serverGrid">
+                {% if guilds %}
+                    {% for guild in guilds %}
+                        {% set icon_hash = guild.get('icon') %}
+                        {% if icon_hash %}
+                            {% set icon_url = 'https://cdn.discordapp.com/icons/' ~ guild.id ~ '/' ~ icon_hash ~ '.png?size=128' %}
+                        {% else %}
+                            {% set icon_url = None %}
+                        {% endif %}
+                        {% set perms = guild.get('permissions', 0) | int %}
+                        {% set owner_tag = 'Server Admin' %}
+                        {% if guild.get('owner') or (perms & 0x8) %}
+                            {% set owner_tag = 'Server Owner' %}
+                        {% elif perms & 0x20 %}
+                            {% set owner_tag = 'Bot Master' %}
+                        {% endif %}
+                        <article class="server-card" data-name="{{ guild.name|lower }}">
+                            <div class="server-top">
+                                {% if icon_url %}
+                                    <img src="{{ icon_url }}" alt="{{ guild.name }}">
+                                {% else %}
+                                    <div class="avatar-fallback">{{ guild.name[:2] if guild.name else 'SV' }}</div>
+                                {% endif %}
+                                <div>
+                                    <h3>{{ guild.name }}</h3>
+                                    <p>{{ owner_tag }}</p>
+                                </div>
+                            </div>
+                            <div class="server-meta">
+                                <span>Members {{ guild.approximate_member_count or guild.member_count or '&mdash;' }}</span>
+                                <a href="{{ url_for('guild_dashboard', guild_id=guild.id) }}" class="hover-glow-btn">Open</a>
+                            </div>
+                        </article>
                     {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+                {% else %}
+                    <p class="empty-copy">Invite the bot to a server to unlock controls.</p>
+                {% endif %}
+            </div>
+        </section>
 
-        <main class="content-scroll">
-            <section class="section-wrapper space-y-6">
-                <div class="server-grid-header">
-                    <div>
-                        <p class="text-sm text-slate-400">Your Discord spaces</p>
-                        <h2 class="text-2xl font-semibold">Server Access</h2>
-                    </div>
-                    <div class="server-filters">
-                        <input type="text" id="serverSearch" class="search-input" placeholder="Filter servers">
-                        <select id="serverCategory" class="select-chip">
-                            <option value="all">All</option>
-                            <option value="owner">Owner</option>
-                            <option value="admin">Bot Master</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="server-grid" id="serverGrid">
-                    {% if guilds %}
-                        {% for guild in guilds %}
-                            {% set icon_hash = guild.get('icon') %}
-                            {% if icon_hash %}
-                                {% set icon_url = 'https://cdn.discordapp.com/icons/' ~ guild.id ~ '/' ~ icon_hash ~ '.png?size=128' %}
-                            {% else %}
-                                {% set icon_url = None %}
-                            {% endif %}
-                            {% set perms = guild.get('permissions', 0) | int %}
-                            {% set owner_tag = 'Bot Master' if is_owner else 'Server Admin' %}
-                            <article class="server-card" data-name="{{ guild.name|lower }}">
-                                <div class="server-card-head">
-                                    {% if icon_url %}
-                                        <img src="{{ icon_url }}" alt="{{ guild.name }}" class="server-avatar">
-                                    {% else %}
-                                        <div class="server-avatar text-center text-lg">{{ guild.name[:2] if guild.name else 'SV' }}</div>
-                                    {% endif %}
-                                    <div>
-                                        <p class="font-semibold text-lg">{{ guild.name }}</p>
-                                        <p class="text-xs tracking-[0.25em] text-slate-400 uppercase">{{ owner_tag }}</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <p class="text-sm text-slate-400">Access level synced</p>
-                                    <a href="{{ url_for('guild_dashboard', guild_id=guild.id) }}" class="hover-glow-btn">Go</a>
-                                </div>
-                            </article>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-slate-400">Add the bot to a server to unlock controls.</p>
-                    {% endif %}
-                </div>
-            </section>
-
-            <section class="metric-grid mt-8">
+        <section class="panel metric-panel">
+            <div class="metric-grid">
                 {% for card in overview_cards %}
-                    <div class="metric-card">
+                    <article class="metric-card">
                         <p class="metric-label">{{ card.label }}</p>
                         <p class="metric-value counter" data-count-target="{{ card.value | replace(',', '') }}">{{ card.value }}</p>
                         <p class="metric-delta">{{ card.delta }}</p>
-                    </div>
+                    </article>
                 {% endfor %}
-            </section>
+            </div>
+            <div class="live-diagnostics">
+                <article>
+                    <p class="metric-label">Guild count</p>
+                    <h3 id="live-guilds">--</h3>
+                </article>
+                <article>
+                    <p class="metric-label">User count</p>
+                    <h3 id="live-users">--</h3>
+                </article>
+                <article>
+                    <p class="metric-label">Commands run</p>
+                    <h3 id="live-commands">--</h3>
+                </article>
+                <article>
+                    <p class="metric-label">Latency</p>
+                    <h3 id="live-latency">--</h3>
+                </article>
+                <article>
+                    <p class="metric-label">Uptime</p>
+                    <h3 id="live-uptime">--</h3>
+                </article>
+                <article>
+                    <p class="metric-label">CPU / RAM</p>
+                    <h3><span id="live-cpu">--</span>% &middot; <span id="live-ram">--</span>%</h3>
+                </article>
+            </div>
+        </section>
 
-            <section class="section-wrapper mt-8">
-                <h2 class="text-xl font-semibold mb-4">Live Telemetry</h2>
-                <div class="metric-grid">
-                    <div class="metric-card">
-                        <p class="metric-label">Guild Count</p>
-                        <p class="metric-value" id="live-guilds">--</p>
-                    </div>
-                    <div class="metric-card">
-                        <p class="metric-label">User Count</p>
-                        <p class="metric-value" id="live-users">--</p>
-                    </div>
-                    <div class="metric-card">
-                        <p class="metric-label">Commands Run</p>
-                        <p class="metric-value" id="live-commands">--</p>
-                    </div>
-                    <div class="metric-card">
-                        <p class="metric-label">Latency</p>
-                        <p class="metric-value text-lg" id="live-latency">--</p>
-                    </div>
-                    <div class="metric-card">
-                        <p class="metric-label">Uptime</p>
-                        <p class="metric-value text-lg" id="live-uptime">--</p>
-                    </div>
-                    <div class="metric-card">
-                        <p class="metric-label">CPU / RAM</p>
-                        <p class="metric-value text-lg"><span id="live-cpu">--</span>% / <span id="live-ram">--</span>%</p>
-                    </div>
+        <section class="panel charts-panel">
+            <div class="chart-card">
+                <div>
+                    <p class="card-label">30 day trend</p>
+                    <h3>Server growth</h3>
                 </div>
-            </section>
+                <canvas id="serverGrowthChart" height="320"></canvas>
+            </div>
+            <div class="chart-card">
+                <div>
+                    <p class="card-label">Community pulse</p>
+                    <h3>User activity</h3>
+                </div>
+                <canvas id="userActivityChart" height="320"></canvas>
+            </div>
+            <div class="chart-card">
+                <div>
+                    <p class="card-label">Feature mix</p>
+                    <h3>Utilization</h3>
+                </div>
+                <canvas id="subscriptionChart" height="320"></canvas>
+            </div>
+        </section>
 
-            <section class="chart-grid mt-8">
-                <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-slate-400">30 day trend</p>
-                            <h3 class="text-xl font-semibold">Server Growth</h3>
-                        </div>
+        <section class="panel telemetry-panel">
+            <div class="activity-panel">
+                <div class="panel-head">
+                    <div>
+                        <p class="card-label">Activity</p>
+                        <h3>Community timeline</h3>
                     </div>
-                    <canvas id="serverGrowthChart" height="320"></canvas>
+                    <span class="status-chip ghost">Today {{ metrics.activity_today.chat + metrics.activity_today.voice if metrics else 0 }} min</span>
                 </div>
-                <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-slate-400">Community pulse</p>
-                            <h3 class="text-xl font-semibold">User Activity</h3>
+                <div class="activity-bars">
+                    {% set max_value = activity_max or 1 %}
+                    {% for point in activity_series %}
+                        {% set height = (point.value / max_value) * 100 %}
+                        <div class="activity-bar">
+                            <span class="bar" style="height: {{ height if height > 6 else 6 }}%"></span>
+                            <span class="bar-label">{{ point.label }}</span>
                         </div>
-                    </div>
-                    <canvas id="userActivityChart" height="320"></canvas>
+                    {% else %}
+                        <p class="empty-copy">No recent activity recorded.</p>
+                    {% endfor %}
                 </div>
-                <div class="chart-card">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-slate-400">Platform mix</p>
-                            <h3 class="text-xl font-semibold">Feature Utilization</h3>
-                        </div>
+            </div>
+            <div class="owner-panel" id="owner-logs">
+                <div class="panel-head">
+                    <div>
+                        <p class="card-label">Owner logging</p>
+                        <h3>Audit feed</h3>
                     </div>
-                    <canvas id="subscriptionChart" height="320"></canvas>
+                    <span class="status-chip">Live</span>
                 </div>
-            </section>
-
-            <section class="chart-grid mt-8">
-                <div class="chart-card col-span-2">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-sm text-slate-400">Live data from user_activity table</p>
-                            <h2 class="text-2xl font-semibold">Community Activity</h2>
-                        </div>
-                        <span class="version-chip">Today {{ metrics.activity_today.chat + metrics.activity_today.voice if metrics else 0 }} min</span>
-                    </div>
-                    <div class="flex items-end gap-2 h-56">
-                        {% set max_value = activity_max or 1 %}
-                        {% for point in activity_series %}
-                            {% set height = (point.value / max_value) * 100 %}
-                            <div class="flex flex-col items-center flex-1">
-                                <div class="w-5 rounded-full bg-gradient-to-t from-[var(--neon-purple)] to-[var(--neon-blue)]" style="height: {{ height if height > 6 else 6 }}%"></div>
-                                <span class="text-[10px] text-slate-500 mt-2">{{ point.label }}</span>
+                <ul>
+                    {% for log in owner_logs %}
+                        <li>
+                            <div>
+                                <strong>{{ log.title }}</strong>
+                                <p>{{ log.detail }}</p>
                             </div>
-                        {% else %}
-                            <p class="text-slate-400 text-sm">No recent activity recorded.</p>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="glow-panel">
-                    <h2 class="text-xl font-semibold mb-4">Command Summary</h2>
-                    <div class="space-y-3">
-                        {% for group in command_groups %}
-                            <div class="flex items-center justify-between text-sm text-slate-100">
-                                <span>{{ group.name }}</span>
-                                <span class="px-2 py-0.5 rounded-full bg-white/10 text-xs">{{ group.commands|length }} commands</span>
+                            <div>
+                                <span>{{ log.status }}</span>
+                                <p>{{ log.timestamp }}</p>
                             </div>
-                        {% endfor %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="command-panel">
+                <div class="panel-head">
+                    <div>
+                        <p class="card-label">Highlights</p>
+                        <h3>Command spotlight</h3>
                     </div>
-                    <p class="text-xs text-slate-200 mt-4">{{ command_total }} slash commands total.</p>
+                    <span class="status-chip ghost">{{ command_total }} commands</span>
                 </div>
-                <div class="glow-panel">
-                    <h2 class="text-xl font-semibold mb-4">Bot Status</h2>
-                    <ul class="text-sm space-y-2 text-slate-100">
-                        <li class="flex justify-between"><span>Cluster</span><span>{{ bot_status.cluster }}</span></li>
-                        <li class="flex justify-between"><span>Region</span><span>{{ bot_status.region }}</span></li>
-                        <li class="flex justify-between"><span>Latency</span><span>{{ bot_status.latency }}</span></li>
-                        <li class="flex justify-between"><span>Uptime</span><span>{{ bot_status.uptime }}</span></li>
-                        <li class="flex justify-between"><span>Refreshed</span><span>{{ bot_status.refreshed }}</span></li>
-                    </ul>
-                </div>
-            </section>
-
-            <section class="chart-grid mt-8">
-                <div class="chart-card col-span-2">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <p class="text-sm text-slate-400">{{ recent_servers|length }} guilds displayed</p>
-                            <h2 class="text-2xl font-semibold">Recent Server Joins</h2>
-                        </div>
-                        <span class="version-chip">Live</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-200">
-                            <thead class="text-slate-400 uppercase text-xs tracking-widest">
-                                <tr>
-                                    <th class="py-2">Server Name</th>
-                                    <th class="py-2">Members</th>
-                                    <th class="py-2">Region</th>
-                                    <th class="py-2">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-white/5">
-                                {% for server in recent_servers %}
-                                    <tr class="py-3">
-                                        <td class="py-3">
-                                            <div class="flex items-center gap-3">
-                                                <div class="h-9 w-9 rounded-full bg-white/5 grid place-items-center text-xs uppercase">
-                                                    {{ server.name[:2] if server.name else 'SV' }}
-                                                </div>
-                                                <span>{{ server.name }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 text-slate-300">{{ server.members }}</td>
-                                        <td class="py-3 text-slate-300">{{ server.region }}</td>
-                                        <td class="py-3">
-                                            <span class="px-3 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-300">{{ server.status }}</span>
-                                        </td>
-                                    </tr>
+                <div class="command-highlight-grid">
+                    {% for highlight in command_sections %}
+                        <article>
+                            <h4>{{ highlight.title }}</h4>
+                            <ul>
+                                {% for cmd in highlight.commands %}
+                                    <li>
+                                        <span>{{ cmd.name }}</span>
+                                        <p>{{ cmd.description }}</p>
+                                    </li>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                            </ul>
+                        </article>
+                    {% endfor %}
                 </div>
-                <div class="chart-card">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold">Owner Logging</h2>
-                        <span class="text-xs text-slate-400 uppercase tracking-widest">Root Access</span>
-                    </div>
-                    <ul class="space-y-4 text-slate-100">
-                        {% for log in owner_logs %}
-                            <li class="p-4 rounded-xl bg-white/5 flex items-center justify-between">
-                                <div>
-                                    <p class="font-semibold">{{ log.title }}</p>
-                                    <p class="text-sm text-slate-300">{{ log.detail }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-xs px-3 py-1 rounded-full bg-white/10 text-white/70">{{ log.status }}</span>
-                                    <p class="text-xs text-slate-400 mt-2">{{ log.timestamp }}</p>
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </section>
+            </div>
+        </section>
 
-            {% if module_cards and guilds %}
-            <section class="section-wrapper mt-8 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-semibold">Modules</h2>
-                    <p class="text-sm text-slate-400">Manage each feature per guild.</p>
+        {% if module_cards and guilds %}
+            <section class="panel modules-panel">
+                <div class="panel-head">
+                    <div>
+                        <p class="card-label">Modules</p>
+                        <h2>Feature matrix</h2>
+                    </div>
+                    <p class="text-sm text-slate-300">Manage features per guild with live syncing.</p>
                 </div>
                 <div class="module-grid">
                     {% for module in module_cards %}
-                        <div class="library-card flex flex-col justify-between">
+                        <article class="module-card">
                             <div>
-                                <h3 class="font-semibold">{{ module.title }}</h3>
-                                <p class="text-sm text-slate-400">{{ module.description }}</p>
+                                <p class="card-label">{{ module.badge }}</p>
+                                <h3>{{ module.title }}</h3>
+                                <p>{{ module.description }}</p>
                             </div>
-                            <div class="mt-4">
-                                {% if guilds %}
-                                    <a href="{{ url_for('module_dashboard_view', guild_id=guilds[0].id, module_slug=module.slug) }}" class="hover-glow-btn w-full justify-center">Open {{ guilds[0].name }}</a>
-                                {% else %}
-                                    <p class="text-xs text-slate-500">Add the bot to a guild to manage this module.</p>
-                                {% endif %}
+                            <div class="module-footer">
+                                <span>{{ module.permissions }}</span>
+                                <a class="hover-glow-btn" href="{{ url_for('module_dashboard_view', guild_id=guilds[0].id, module_slug=module.slug) }}">Open {{ guilds[0].name }}</a>
                             </div>
-                        </div>
+                        </article>
                     {% endfor %}
                 </div>
             </section>
-            {% endif %}
+        {% endif %}
 
-            <section class="chart-grid mt-8">
-                <div class="chart-card command-launcher">
-                    <h2 class="text-2xl font-semibold mb-2">Command Launcher</h2>
-                    <p class="text-sm text-slate-300 mb-4">Queue slash commands directly from the dashboard. The bot reads the pending list and executes them inside the selected guild.</p>
-                    <form method="POST" action="{{ url_for('dashboard_command_request') }}" class="space-y-4">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <div>
-                            <label class="text-xs uppercase tracking-widest text-slate-400">Command</label>
-                            <select name="command" class="mt-1">
-                                {% for group in command_groups %}
-                                    <optgroup label="{{ group.name }}">
-                                        {% for command in group.commands %}
-                                            <option value="{{ command.name }}">{{ command.name }} - {{ command.description }}</option>
-                                        {% endfor %}
-                                    </optgroup>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs uppercase tracking-widest text-slate-400">Guild</label>
-                            <select name="guild_id" class="mt-1">
-                                {% for guild in admin_guilds %}
-                                    <option value="{{ guild.id }}">{{ guild.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-xs uppercase tracking-widest text-slate-400">Payload / Notes</label>
-                            <textarea name="payload" rows="4" placeholder='Optional JSON or notes (e.g. {&quot;channel&quot;: &quot;123&quot;})'></textarea>
-                        </div>
-                        <button type="submit" class="hover-glow-btn w-full justify-center">Queue Command</button>
-                    </form>
-                </div>
-                <div class="chart-card xl:col-span-2">
-                    <h2 class="text-2xl font-semibold">Command Library</h2>
-                    <p class="text-sm text-slate-400 mb-4">All slash commands grouped by module. Use the launcher on the left or copy descriptions for your team.</p>
-                    <div class="command-library">
+        <section class="panel command-lab" id="commands">
+            <div class="command-launcher">
+                <h2>Command launcher</h2>
+                <p>Queue slash commands directly from the dashboard.</p>
+                <form method="POST" action="{{ url_for('dashboard_command_request') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label>Command</label>
+                    <select name="command">
                         {% for group in command_groups %}
-                            <div class="library-card space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="font-semibold">{{ group.name }}</h3>
-                                    <span class="text-[10px] uppercase tracking-widest text-white/70">{{ group.badge }}</span>
-                                </div>
-                                <p class="text-sm text-slate-400">{{ group.description }}</p>
-                                <ul class="space-y-2">
-                                    {% for command in group.commands %}
-                                        <li class="p-3 rounded-xl bg-black/30 border border-white/5">
-                                            <div class="flex items-center justify-between text-sm">
-                                                <span class="font-semibold">{{ command.name }}</span>
-                                                <span class="text-[11px] text-slate-400">{{ command.permissions }}</span>
-                                            </div>
-                                            <p class="text-xs text-slate-400 mt-1">{{ command.description }}</p>
-                                            {% if command.supports_modal %}
-                                                <span class="text-[10px] uppercase tracking-widest text-emerald-400">Modal supported</span>
-                                            {% endif %}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
+                            <optgroup label="{{ group.name }}">
+                                {% for command in group.commands %}
+                                    <option value="{{ command.name }}">{{ command.name }} &mdash; {{ command.description }}</option>
+                                {% endfor %}
+                            </optgroup>
                         {% endfor %}
-                    </div>
+                    </select>
+                    <label>Guild</label>
+                    <select name="guild_id">
+                        {% for guild in admin_guilds %}
+                            <option value="{{ guild.id }}">{{ guild.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label>Payload / Notes</label>
+                    <textarea name="payload" rows="4" placeholder='Optional JSON payload (e.g. {&quot;channel&quot;: &quot;123&quot;})'></textarea>
+                    <button type="submit" class="hover-glow-btn">Queue command</button>
+                </form>
+            </div>
+            <div class="command-library">
+                <h2>Command library</h2>
+                <p>All slash commands grouped by module. Use them inside Discord or queue them here.</p>
+                <div class="command-library-grid">
+                    {% for group in command_groups %}
+                        <article>
+                            <div class="command-group-head">
+                                <h3>{{ group.name }}</h3>
+                                <span>{{ group.badge }}</span>
+                            </div>
+                            <p>{{ group.description }}</p>
+                            <ul>
+                                {% for command in group.commands %}
+                                    <li>
+                                        <div>
+                                            <strong>{{ command.name }}</strong>
+                                            <span>{{ command.permissions }}</span>
+                                        </div>
+                                        <p>{{ command.description }}</p>
+                                        {% if command.supports_modal %}
+                                            <span class="tag">Modal</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </article>
+                    {% endfor %}
                 </div>
-            </section>
-        </main>
-    </section>
+            </div>
+        </section>
+
+        <section class="panel audit-panel" id="audit">
+            <div class="panel-head">
+                <div>
+                    <p class="card-label">Recent servers</p>
+                    <h2>Join timeline</h2>
+                </div>
+                <span class="status-chip ghost">{{ recent_servers|length }} guilds</span>
+            </div>
+            <div class="audit-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Server</th>
+                            <th>Members</th>
+                            <th>Region</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for server in recent_servers %}
+                            <tr>
+                                <td>
+                                    <div class="table-name">
+                                        <span class="avatar-fallback">{{ server.name[:2] if server.name else 'SV' }}</span>
+                                        <span>{{ server.name }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ server.members }}</td>
+                                <td>{{ server.region }}</td>
+                                <td><span class="status-pill">{{ server.status }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="panel flash-panel">
+                    {% for category, message in messages %}
+                        <div class="flash-message {% if category == 'error' %}error{% else %}success{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+    </main>
 
     <script>
         const activitySeries = {{ activity_series | tojson }};
@@ -439,16 +488,15 @@
             document.querySelectorAll('.counter').forEach(counter => {
                 const target = parseFloat(counter.dataset.countTarget);
                 if (Number.isNaN(target)) return;
-                let current = 0;
                 const duration = 1200;
                 const start = performance.now();
-                function step(now) {
+                function frame(now) {
                     const progress = Math.min((now - start) / duration, 1);
-                    current = Math.floor(progress * target);
-                    counter.textContent = current.toLocaleString();
-                    if (progress < 1) requestAnimationFrame(step);
+                    const value = Math.floor(progress * target);
+                    counter.textContent = value.toLocaleString();
+                    if (progress < 1) requestAnimationFrame(frame);
                 }
-                requestAnimationFrame(step);
+                requestAnimationFrame(frame);
             });
         }
         function filterServers() {
@@ -456,8 +504,10 @@
             const filter = document.getElementById('serverCategory')?.value || 'all';
             document.querySelectorAll('#serverGrid .server-card').forEach(card => {
                 const matchesName = card.dataset.name.includes(term);
-                const tag = card.querySelector('.server-card-head p:nth-child(2)')?.textContent || '';
-                const matchesFilter = filter === 'all' ? true : (filter === 'owner' ? tag.includes('Owner') : tag.includes('Bot Master'));
+                const tag = card.querySelector('.server-top p')?.textContent || '';
+                const matchesFilter = filter === 'all'
+                    ? true
+                    : (filter === 'owner' ? tag.includes('Owner') : tag.includes('Bot Master'));
                 card.style.display = matchesName && matchesFilter ? '' : 'none';
             });
         }
@@ -473,14 +523,14 @@
                         datasets: [{
                             label: 'Servers',
                             data: activitySeries.map(item => item.value),
-                            borderColor: '#A06BFF',
-                            backgroundColor: 'rgba(160,107,255,0.15)',
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.15)',
                             borderWidth: 2,
                             tension: 0.35,
                             fill: true
                         }]
                     },
-                    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aab' } }, y: { ticks: { color: '#aab' } } } }
+                    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
                 });
             }
             const userCtx = document.getElementById('userActivityChart');
@@ -490,11 +540,11 @@
                     data: {
                         labels: activitySeries.map(item => item.label),
                         datasets: [
-                            { label: 'Chat', data: activitySeries.map(item => item.chat), backgroundColor: '#4BC9FF' },
-                            { label: 'Voice', data: activitySeries.map(item => item.voice), backgroundColor: '#3EF9CF' }
+                            { label: 'Chat', data: activitySeries.map(item => item.chat), backgroundColor: '#a855f7' },
+                            { label: 'Voice', data: activitySeries.map(item => item.voice), backgroundColor: '#34d399' }
                         ]
                     },
-                    options: { scales: { x: { ticks: { color: '#aab' } }, y: { ticks: { color: '#aab' } } } }
+                    options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
                 });
             }
             const featureCtx = document.getElementById('subscriptionChart');
@@ -509,10 +559,10 @@
                                 metricsData.reaction_panels || 0,
                                 metricsData.pending_requests || 0
                             ],
-                            backgroundColor: ['#A06BFF', '#4BC9FF', '#3EF9CF']
+                            backgroundColor: ['#8b5cf6', '#38bdf8', '#34d399']
                         }]
                     },
-                    options: { plugins: { legend: { position: 'bottom', labels: { color: '#aab' } } } }
+                    options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
                 });
             }
         }
