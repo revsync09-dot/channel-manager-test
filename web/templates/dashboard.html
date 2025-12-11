@@ -35,7 +35,7 @@
                         {% for item in section['items'] %}
                            {% set icon_letter = translations.sidebar['items'].get(item.key, item.key.replace('_', ' ').title())[0] %}
                             <div class="sidebar-item" data-icon="{{ icon_letter }}">
-                                {{ translations.sidebar.items.get(item.key, item.key.replace('_', ' ').title()) }}
+                                {{ translations.sidebar['items'].get(item.key, item.key.replace('_', ' ').title()) }}
                                 <span>{{ item.key }}</span>
                             </div>
                         {% endfor %}
