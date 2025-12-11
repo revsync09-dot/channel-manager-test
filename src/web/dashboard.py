@@ -1399,6 +1399,9 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    # deine Logik
+    return render_template("dashboard.html", **context)
+def dashboard():
     """Main dashboard"""
     access_token = session.get('access_token')
     user = session.get('user')
