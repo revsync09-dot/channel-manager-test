@@ -14,6 +14,7 @@
 <body class="dashboard-body pro-dashboard">
     <div class="ambient-grid" aria-hidden="true"></div>
     <div class="particle-overlay" aria-hidden="true"></div>
+    {% set session_display_name = user.get('global_name') or user.get('username') %}
 
     <div class="loading-overlay" id="dashboardLoader">
         <div class="loader-core">
@@ -31,20 +32,20 @@
                     <h2>{{ brand_name }}</h2>
                 </div>
             </div>
-            <span class="status-chip ghost">{{ bot_status.cluster }}</span>
+            <span class="status-chip ghost">{{ bot_status['cluster'] }}</span>
         </div>
         <div class="dock-session">
             <div class="session-user">
                 <img src="{{ avatar_url }}" alt="User">
                 <div>
                     <p class="session-label">Signed in as</p>
-                    <h3>{{ user.global_name or user.username }}</h3>
+                    <h3>{{ session_display_name }}</h3>
                     <p class="session-subtext">OAuth session active</p>
                 </div>
             </div>
             <div class="session-meta">
-                <span>Last refresh {{ bot_status.refreshed }}</span>
-                <span>Latency {{ bot_status.latency }}</span>
+                <span>Last refresh {{ bot_status['refreshed'] }}</span>
+                <span>Latency {{ bot_status['latency'] }}</span>
             </div>
             {% if developer_mode %}
                 <p class="session-alert">Developer mode enabled</p>
@@ -52,18 +53,23 @@
         </div>
         <nav class="dock-nav">
             {% for section in nav_sections %}
+                {% set section_title_key = section['title'] %}
+                {% set section_desc_key = section['description'] %}
+                {% set section_default_title = section_title_key | replace('_',' ') | title %}
+                {% set section_title = translations['sidebar']['sections'].get(section_title_key, section_default_title) %}
+                {% set section_copy = translations['sidebar']['descriptions'].get(section_desc_key, '') %}
                 <div class="dock-group">
-                    {% set section_title = translations.sidebar.sections.get(section.title, section.title.replace('_',' ').title()) %}
-                    {% set section_copy = translations.sidebar.descriptions.get(section.description, '') %}
                     <p class="dock-group-title">{{ section_title }}</p>
                     <p class="dock-group-copy">{{ section_copy }}</p>
                     <div class="dock-items">
-                        {% for item in section.items %}
-                            {% set item_label = translations.sidebar.items.get(item.key, item.key.replace('_',' ').title()) %}
+                        {% for item in section['items'] %}
+                            {% set item_key = item['key'] %}
+                            {% set default_label = item_key | replace('_',' ') | title %}
+                            {% set item_label = translations['sidebar']['items'].get(item_key, default_label) %}
                             {% set icon_letter = item_label[0] %}
                             <button type="button" class="dock-item" data-icon="{{ icon_letter }}">
                                 <span>{{ item_label }}</span>
-                                <span class="dock-item-meta">{{ item.key.replace('_',' ') }}</span>
+                                <span class="dock-item-meta">{{ item_key | replace('_',' ') }}</span>
                             </button>
                         {% endfor %}
                     </div>
@@ -79,12 +85,12 @@
     <main class="dashboard-main">
         <header class="hero-zone">
             <div class="hero-copy">
-                <p class="hero-meta">{{ brand_name }} Control &middot; Cluster {{ bot_status.cluster }}</p>
+                <p class="hero-meta">{{ brand_name }} Control &middot; Cluster {{ bot_status['cluster'] }}</p>
                 <h1>Next-gen Discord mission control</h1>
                 <p>{{ tagline }}</p>
                 <div class="hero-chips">
-                    <span class="status-chip">v{{ bot_status.version }}</span>
-                    <span class="status-chip ghost">{{ bot_status.region }}</span>
+                    <span class="status-chip">v{{ bot_status['version'] }}</span>
+                    <span class="status-chip ghost">{{ bot_status['region'] }}</span>
                     {% if developer_mode %}
                         <span class="status-chip accent">Developer Mode</span>
                     {% endif %}
@@ -115,18 +121,18 @@
             <div class="hero-panels">
                 <article class="hero-card">
                     <p class="card-label">OAuth session</p>
-                    <h3>{{ user.global_name or user.username }}</h3>
+                    <h3>{{ session_display_name }}</h3>
                     <p>Active identity token synced across {{ guilds|length }} guilds.</p>
                 </article>
                 <article class="hero-card">
                     <p class="card-label">Pending jobs</p>
-                    <h3>{{ metrics.pending_requests or 0 }}</h3>
+                    <h3>{{ metrics['pending_requests'] or 0 }}</h3>
                     <p>Queued setup requests waiting for bot workers.</p>
                 </article>
                 <article class="hero-card">
                     <p class="card-label">Uptime &amp; latency</p>
-                    <h3>{{ bot_status.uptime }}</h3>
-                    <p>{{ bot_status.latency }} &middot; {{ bot_status.region }}</p>
+                    <h3>{{ bot_status['uptime'] }}</h3>
+                    <p>{{ bot_status['latency'] }} &middot; {{ bot_status['region'] }}</p>
                 </article>
             </div>
         </header>
@@ -148,11 +154,12 @@
                 </div>
                 <a href="{{ url_for('login') }}">Re-authorize</a>
             </article>
+            {% set first_owner_log = owner_logs[0] if owner_logs else None %}
             <article class="integration-card logging">
                 <div>
                     <p class="card-label">Owner logging</p>
-                    <h3>{{ owner_logs[0].title if owner_logs else 'Audit feed' }}</h3>
-                    <p>{{ owner_logs[0].detail if owner_logs else 'Live audit messages keep you informed.' }}</p>
+                    <h3>{{ first_owner_log['title'] if first_owner_log else 'Audit feed' }}</h3>
+                    <p>{{ first_owner_log['detail'] if first_owner_log else 'Live audit messages keep you informed.' }}</p>
                 </div>
                 <a href="#owner-logs">View log</a>
             </article>
@@ -177,33 +184,36 @@
                 {% if guilds %}
                     {% for guild in guilds %}
                         {% set icon_hash = guild.get('icon') %}
+                        {% set guild_id = guild.get('id') %}
+                        {% set guild_name = guild.get('name') %}
                         {% if icon_hash %}
-                            {% set icon_url = 'https://cdn.discordapp.com/icons/' ~ guild.id ~ '/' ~ icon_hash ~ '.png?size=128' %}
+                            {% set icon_url = 'https://cdn.discordapp.com/icons/' ~ guild_id ~ '/' ~ icon_hash ~ '.png?size=128' %}
                         {% else %}
                             {% set icon_url = None %}
                         {% endif %}
-                        {% set perms = guild.get('permissions', 0) | int %}
                         {% set owner_tag = 'Server Admin' %}
-                        {% if guild.get('owner') or (perms & 0x8) %}
+                        {% if guild.get('owner') or guild.get('is_admin') %}
                             {% set owner_tag = 'Server Owner' %}
-                        {% elif perms & 0x20 %}
+                        {% elif guild.get('has_manage_guild') %}
                             {% set owner_tag = 'Bot Master' %}
                         {% endif %}
-                        <article class="server-card" data-name="{{ guild.name|lower }}">
+                        <article class="server-card" data-name="{{ guild_name|lower if guild_name else '' }}">
                             <div class="server-top">
                                 {% if icon_url %}
-                                    <img src="{{ icon_url }}" alt="{{ guild.name }}">
+                                    <img src="{{ icon_url }}" alt="{{ guild_name }}">
                                 {% else %}
-                                    <div class="avatar-fallback">{{ guild.name[:2] if guild.name else 'SV' }}</div>
+                                    <div class="avatar-fallback">{{ guild_name[:2] if guild_name else 'SV' }}</div>
                                 {% endif %}
                                 <div>
-                                    <h3>{{ guild.name }}</h3>
+                                    <h3>{{ guild_name }}</h3>
                                     <p>{{ owner_tag }}</p>
                                 </div>
                             </div>
                             <div class="server-meta">
-                                <span>Members {{ guild.approximate_member_count or guild.member_count or '&mdash;' }}</span>
-                                <a href="{{ url_for('guild_dashboard', guild_id=guild.id) }}" class="hover-glow-btn">Open</a>
+                                {% set approx_members = guild.get('approximate_member_count') %}
+                                {% set displayed_members = approx_members if approx_members is not none else guild.get('member_count') %}
+                                <span>Members {{ displayed_members or '&mdash;' }}</span>
+                                <a href="{{ url_for('guild_dashboard', guild_id=guild_id) }}" class="hover-glow-btn">Open</a>
                             </div>
                         </article>
                     {% endfor %}
@@ -217,9 +227,9 @@
             <div class="metric-grid">
                 {% for card in overview_cards %}
                     <article class="metric-card">
-                        <p class="metric-label">{{ card.label }}</p>
-                        <p class="metric-value counter" data-count-target="{{ card.value | replace(',', '') }}">{{ card.value }}</p>
-                        <p class="metric-delta">{{ card.delta }}</p>
+                        <p class="metric-label">{{ card['label'] }}</p>
+                        <p class="metric-value counter" data-count-target="{{ card['value'] | replace(',', '') }}">{{ card['value'] }}</p>
+                        <p class="metric-delta">{{ card['delta'] }}</p>
                     </article>
                 {% endfor %}
             </div>
@@ -282,7 +292,7 @@
                         <p class="card-label">Activity</p>
                         <h3>Community timeline</h3>
                     </div>
-                    <span class="status-chip ghost">Today {{ metrics.activity_today.chat + metrics.activity_today.voice if metrics else 0 }} min</span>
+                    <span class="status-chip ghost">Today {{ metrics['activity_today']['chat'] + metrics['activity_today']['voice'] if metrics else 0 }} min</span>
                 </div>
                 <div class="activity-bars">
                     {% set max_value = activity_max or 1 %}
@@ -309,12 +319,12 @@
                     {% for log in owner_logs %}
                         <li>
                             <div>
-                                <strong>{{ log.title }}</strong>
-                                <p>{{ log.detail }}</p>
+                                <strong>{{ log['title'] }}</strong>
+                                <p>{{ log['detail'] }}</p>
                             </div>
                             <div>
-                                <span>{{ log.status }}</span>
-                                <p>{{ log.timestamp }}</p>
+                                <span>{{ log['status'] }}</span>
+                                <p>{{ log['timestamp'] }}</p>
                             </div>
                         </li>
                     {% endfor %}
@@ -331,12 +341,12 @@
                 <div class="command-highlight-grid">
                     {% for highlight in command_sections %}
                         <article>
-                            <h4>{{ highlight.title }}</h4>
+                            <h4>{{ highlight['title'] }}</h4>
                             <ul>
-                                {% for cmd in highlight.commands %}
+                                {% for cmd in highlight['commands'] %}
                                     <li>
-                                        <span>{{ cmd.name }}</span>
-                                        <p>{{ cmd.description }}</p>
+                                        <span>{{ cmd['name'] }}</span>
+                                        <p>{{ cmd['description'] }}</p>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -359,13 +369,13 @@
                     {% for module in module_cards %}
                         <article class="module-card">
                             <div>
-                                <p class="card-label">{{ module.badge }}</p>
-                                <h3>{{ module.title }}</h3>
-                                <p>{{ module.description }}</p>
+                                <p class="card-label">{{ module['badge'] }}</p>
+                                <h3>{{ module['title'] }}</h3>
+                                <p>{{ module['description'] }}</p>
                             </div>
                             <div class="module-footer">
-                                <span>{{ module.permissions }}</span>
-                                <a class="hover-glow-btn" href="{{ url_for('module_dashboard_view', guild_id=guilds[0].id, module_slug=module.slug) }}">Open {{ guilds[0].name }}</a>
+                                <span>{{ module['permissions'] }}</span>
+                                <a class="hover-glow-btn" href="{{ url_for('module_dashboard_view', guild_id=guilds[0]['id'], module_slug=module['slug']) }}">Open {{ guilds[0]['name'] }}</a>
                             </div>
                         </article>
                     {% endfor %}
@@ -382,9 +392,9 @@
                     <label>Command</label>
                     <select name="command">
                         {% for group in command_groups %}
-                            <optgroup label="{{ group.name }}">
-                                {% for command in group.commands %}
-                                    <option value="{{ command.name }}">{{ command.name }} &mdash; {{ command.description }}</option>
+                            <optgroup label="{{ group['name'] }}">
+                                {% for command in group['commands'] %}
+                                    <option value="{{ command['name'] }}">{{ command['name'] }} &mdash; {{ command['description'] }}</option>
                                 {% endfor %}
                             </optgroup>
                         {% endfor %}
@@ -392,7 +402,7 @@
                     <label>Guild</label>
                     <select name="guild_id">
                         {% for guild in admin_guilds %}
-                            <option value="{{ guild.id }}">{{ guild.name }}</option>
+                            <option value="{{ guild.get('id') }}">{{ guild.get('name') }}</option>
                         {% endfor %}
                     </select>
                     <label>Payload / Notes</label>
@@ -407,19 +417,19 @@
                     {% for group in command_groups %}
                         <article>
                             <div class="command-group-head">
-                                <h3>{{ group.name }}</h3>
-                                <span>{{ group.badge }}</span>
+                                <h3>{{ group['name'] }}</h3>
+                                <span>{{ group['badge'] }}</span>
                             </div>
-                            <p>{{ group.description }}</p>
+                            <p>{{ group['description'] }}</p>
                             <ul>
-                                {% for command in group.commands %}
+                                {% for command in group['commands'] %}
                                     <li>
                                         <div>
-                                            <strong>{{ command.name }}</strong>
-                                            <span>{{ command.permissions }}</span>
+                                            <strong>{{ command['name'] }}</strong>
+                                            <span>{{ command['permissions'] }}</span>
                                         </div>
-                                        <p>{{ command.description }}</p>
-                                        {% if command.supports_modal %}
+                                        <p>{{ command['description'] }}</p>
+                                        {% if command.get('supports_modal') %}
                                             <span class="tag">Modal</span>
                                         {% endif %}
                                     </li>
@@ -451,16 +461,17 @@
                     </thead>
                     <tbody>
                         {% for server in recent_servers %}
+                            {% set server_name = server.get('name') %}
                             <tr>
                                 <td>
                                     <div class="table-name">
-                                        <span class="avatar-fallback">{{ server.name[:2] if server.name else 'SV' }}</span>
-                                        <span>{{ server.name }}</span>
+                                        <span class="avatar-fallback">{{ server_name[:2] if server_name else 'SV' }}</span>
+                                        <span>{{ server_name }}</span>
                                     </div>
                                 </td>
-                                <td>{{ server.members }}</td>
-                                <td>{{ server.region }}</td>
-                                <td><span class="status-pill">{{ server.status }}</span></td>
+                                <td>{{ server.get('members') }}</td>
+                                <td>{{ server.get('region') }}</td>
+                                <td><span class="status-pill">{{ server.get('status') }}</span></td>
                             </tr>
                         {% endfor %}
                     </tbody>

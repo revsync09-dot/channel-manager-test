@@ -67,6 +67,10 @@ BOT_STATUS_VERSION = os.getenv("BOT_STATUS_VERSION", "v2.4.8-stable")
 BOT_STATUS_CLUSTER = os.getenv("BOT_STATUS_CLUSTER", "Main Cluster")
 BOT_STATUS_REGION = os.getenv("BOT_STATUS_REGION", "Global Edge")
 BOT_STATUS_LATENCY_MS = os.getenv("BOT_STATUS_LATENCY_MS", "243")
+BRAND_LOGO_URL = os.getenv(
+    "DASHBOARD_LOGO_URL",
+    "https://cdn.discordapp.com/attachments/1443222738750668952/1448482674477105362/image.png?ex=693b6c1d&is=693a1a9d&hm=ff31f492a74f0315498dee8ee26fa87b8512ddbee617f4bccda1161f59c8cb49&"
+)
 DEVELOPER_IDS = {
     795466540140986368,
     1377681774880231474,
@@ -1082,15 +1086,13 @@ def validate_oauth_env():
 
 
 def login_required(f):
-    def wrapper(*args, **kwargs):
-        if "user" not in session:
-            # API routes dürfen NICHT redirecten!
-            if request.path.startswith("/api/"):
-                return jsonify({"error": "unauthorized"}), 401
-
-            return redirect(url_for("login"))
+    """Decorator to require login"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
-
+    return decorated_function
 
 
 def get_discord_user(access_token):
@@ -1318,6 +1320,7 @@ def index():
         brand_name=BRAND_NAME,
         tagline=BRAND_TAGLINE,
         support_invite=SUPPORT_INVITE,
+        brand_logo_url=BRAND_LOGO_URL,
     )
 
 
@@ -1396,10 +1399,6 @@ def logout():
     return redirect(url_for('index'))
 
 
-# ============================================================
-#   CORRECT & ONLY VALID DASHBOARD ROUTE
-# ============================================================
-
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -1414,8 +1413,11 @@ def dashboard():
     admin_guilds = filter_admin_guilds(access_token)
     guilds_for_snapshot = fetch_bot_guild_snapshot(admin_guilds if not developer_mode else [])
     launcher_guilds = admin_guilds if admin_guilds else guilds_for_snapshot
+    for g in launcher_guilds:
+        perms = int(g.get("permissions", 0))
+        g["is_admin"] = bool(perms & 0x8)
+        g["has_manage_guild"] = bool(perms & 0x20)
     db_metrics = fetch_database_metrics()
-    
     context = build_dashboard_snapshot(guilds_for_snapshot, db_metrics)
     module_cards = list_module_cards()
     csrf_token = get_or_create_csrf_token()
@@ -1436,13 +1438,10 @@ def dashboard():
         developer_mode=developer_mode,
         module_cards=module_cards,
         csrf_token=csrf_token,
+        brand_logo_url=BRAND_LOGO_URL,
         **context,
     )
 
-
-# ============================================================
-#   COMMAND REQUEST ENDPOINT
-# ============================================================
 
 @app.route('/dashboard/command-request', methods=['POST'])
 @login_required
@@ -1451,15 +1450,9 @@ def dashboard_command_request():
     command_name = request.form.get('command')
     guild_id = request.form.get('guild_id')
     payload = (request.form.get('payload') or "").strip()
-
     if not command_name or not guild_id:
         flash("Command and guild are required.", "error")
         return redirect(url_for('dashboard'))
-
-    # TODO: Implement queueing system
-    flash("Request queued!", "success")
-    return redirect(url_for('dashboard'))
-
     
     access_token = session.get('access_token')
     admin_guilds = filter_admin_guilds(access_token)
@@ -1494,6 +1487,37 @@ def dashboard_command_request():
     return redirect(url_for('dashboard'))
 
 
+@app.route('/dashboard/command-center')
+@login_required
+def command_center():
+    """Dedicated surface for browsing and queuing commands."""
+    access_token = session.get('access_token')
+    user = session.get('user')
+    user_id = int(user.get("id")) if user and user.get("id") else None
+    developer_mode = user_id in DEVELOPER_IDS if user_id else False
+    admin_guilds = filter_admin_guilds(access_token)
+    command_groups = discover_bot_commands()
+    locale = get_active_locale()
+    translations = load_translations(locale)
+    return render_template(
+        'command_center.html',
+        user=user,
+        avatar_url=discord_avatar_url(user),
+        brand_name=BRAND_NAME,
+        support_invite=SUPPORT_INVITE,
+        command_groups=command_groups,
+        guilds=admin_guilds,
+        languages=LANGUAGE_CODES,
+        active_locale=locale,
+        translations=translations,
+        developer_mode=developer_mode,
+        bot_status=build_bot_status(),
+        metrics=fetch_database_metrics(),
+        csrf_token=get_or_create_csrf_token(),
+        brand_logo_url=BRAND_LOGO_URL,
+    )
+
+
 @app.route('/api/live/bot')
 @login_required
 def api_live_bot():
@@ -1504,6 +1528,61 @@ def api_live_bot():
 @login_required
 def api_commands():
     return jsonify(discover_bot_commands())
+
+
+@app.route('/api/command/queue', methods=['POST'])
+@login_required
+def api_command_queue():
+    """Queue a command via JSON for the bot worker to pick up."""
+    payload = request.get_json(silent=True) or {}
+    command_name = payload.get('command')
+    guild_id = payload.get('guild_id')
+    if not command_name or not guild_id:
+        return jsonify({"error": "command and guild_id are required"}), 400
+
+    access_token = session.get('access_token')
+    admin_guilds = filter_admin_guilds(access_token)
+    user = session.get('user')
+    user_id = int(user.get("id")) if user and user.get("id") else None
+    developer_mode = user_id in DEVELOPER_IDS if user_id else False
+    if not developer_mode and not any(str(g.get('id')) == str(guild_id) for g in admin_guilds):
+        return jsonify({"error": "Unauthorized"}), 403
+
+    try:
+        guild_int = int(guild_id)
+    except ValueError:
+        return jsonify({"error": "Invalid guild ID"}), 400
+
+    payload_body = payload.get('payload')
+    notes = (payload.get('notes') or "").strip()
+    options = payload.get('options')
+    data_blob = None
+    if isinstance(payload_body, (dict, list)):
+        envelope = {"payload": payload_body}
+        if notes:
+            envelope["notes"] = notes
+        if options:
+            envelope["options"] = options
+        data_blob = json.dumps(envelope)
+    else:
+        text_value = (payload_body or "").strip()
+        if notes or options:
+            envelope = {}
+            if text_value:
+                envelope["payload"] = text_value
+            if notes:
+                envelope["notes"] = notes
+            if options:
+                envelope["options"] = options
+            data_blob = json.dumps(envelope)
+        else:
+            data_blob = text_value or None
+
+    try:
+        queue_pending_request(guild_int, f"command:{command_name}", data_blob)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+    return jsonify({"success": True})
 
 
 @app.route('/api/guild/<int:guild_id>/module/<module_slug>', methods=['GET', 'POST'])
@@ -1569,6 +1648,7 @@ def developer_dashboard():
         activity_series=metrics.get("activity_series", []),
         activity_max=metrics.get("activity_max", 1),
         csrf_token=get_or_create_csrf_token(),
+        brand_logo_url=BRAND_LOGO_URL,
     )
 
 
@@ -1611,6 +1691,7 @@ def guild_dashboard(guild_id):
         metrics=db_metrics,
         translations=load_translations(get_active_locale()),
         csrf_token=get_or_create_csrf_token(),
+        brand_logo_url=BRAND_LOGO_URL,
         **context,
     )
 
@@ -1643,6 +1724,7 @@ def module_dashboard_view(guild_id, module_slug):
         active_locale=locale,
         translations=translations,
         csrf_token=get_or_create_csrf_token(),
+        brand_logo_url=BRAND_LOGO_URL,
     )
 
 
