@@ -33,7 +33,7 @@
                     <p class="text-[13px] text-slate-500 mb-2">{{ translations.sidebar.descriptions.get(section.description, '') }}</p>
                     <div class="sidebar-items">
                         {% for item in section['items'] %}
-                            {% set icon_letter = translations.sidebar.items.get(item.key, item.key.replace('_', ' ').title())[0] %}
+                           {% set icon_letter = translations.sidebar['items'].get(item.key, item.key.replace('_', ' ').title())[0] %}
                             <div class="sidebar-item" data-icon="{{ icon_letter }}">
                                 {{ translations.sidebar.items.get(item.key, item.key.replace('_', ' ').title()) }}
                                 <span>{{ item.key }}</span>
