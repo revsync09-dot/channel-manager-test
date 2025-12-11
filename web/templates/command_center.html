@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ brand_name }} Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: {} } };
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="dashboard-body command-center-body">
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="particle-overlay" aria-hidden="true"></div>
+
+    <main class="command-center-main">
+        <header class="command-center-hero">
+            <div>
+                <p class="hero-meta">{{ brand_name }} Ops &middot; Command Studio</p>
+                <h1>All commands, fully under your control</h1>
+                <p>Search, configure, and queue any slash command across your guilds. Built for high-trust operators who need a Studio-grade cockpit.</p>
+                <div class="hero-chips">
+                    <span class="status-chip">Cluster {{ bot_status.cluster }}</span>
+                    <span class="status-chip ghost">{{ command_groups|length }} modules</span>
+                    <span class="status-chip accent">{{ metrics.custom_commands or 0 }} custom commands stored</span>
+                </div>
+            </div>
+            <div class="command-hero-actions">
+                <img src="{{ brand_logo_url }}" alt="Brand logo">
+                <div>
+                    <p class="text-sm text-slate-400">Signed in as</p>
+                    <h3>{{ user.global_name or user.username }}</h3>
+                    <p class="text-sm text-slate-500">Latency {{ bot_status.latency }} &middot; {{ bot_status.region }}</p>
+                    <div class="command-hero-buttons">
+                        <a href="{{ url_for('dashboard') }}" class="ghost-btn">Back to Overview</a>
+                        <a href="{{ support_invite }}" target="_blank" class="primary-btn ghost">Support</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="command-meta-grid">
+            <article>
+                <h4>Connected guilds</h4>
+                <p class="metric-value">{{ guilds|length }}</p>
+                <p class="metric-delta">Only guilds where you have admin access appear here.</p>
+            </article>
+            <article>
+                <h4>Pending jobs</h4>
+                <p class="metric-value">{{ metrics.pending_requests or 0 }}</p>
+                <p class="metric-delta">Queued setup / command jobs waiting on the bot worker.</p>
+            </article>
+            <article>
+                <h4>Developer mode</h4>
+                <p class="metric-value">{{ 'Enabled' if developer_mode else 'Standard' }}</p>
+                <p class="metric-delta">Developer mode bypasses guild checks.</p>
+            </article>
+        </section>
+
+        <section class="command-workspace">
+            <div class="command-list-panel">
+                <div class="list-head">
+                    <div>
+                        <label for="commandSearch">Search commands</label>
+                        <input type="text" id="commandSearch" placeholder="Try /setup or /ticket">
+                    </div>
+                    <div>
+                        <label for="moduleFilter">Module</label>
+                        <select id="moduleFilter">
+                            <option value="all">All Modules</option>
+                            {% for group in command_groups %}
+                                <option value="{{ group.name }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="command-list" id="commandList"></div>
+            </div>
+            <div class="command-detail-panel">
+                <div class="detail-header">
+                    <div>
+                        <p class="card-label">Command detail</p>
+                        <h2 id="detailName">Select a command to preview</h2>
+                        <p id="detailDescription">Choose a command from the list to see metadata and run it inside a guild.</p>
+                    </div>
+                    <div class="detail-chips">
+                        <span id="detailModule" class="status-chip ghost">Module</span>
+                        <span id="detailPermission" class="status-chip">Permissions</span>
+                    </div>
+                </div>
+                <form class="detail-form" id="commandForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label for="detailGuild">Guild</label>
+                    <select id="detailGuild" required>
+                        {% if guilds %}
+                            {% for guild in guilds %}
+                                <option value="{{ guild.id }}">{{ guild.name }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="" disabled selected>Add the bot to a server first</option>
+                        {% endif %}
+                    </select>
+                    <label for="detailNotes">Notes</label>
+                    <input type="text" id="detailNotes" placeholder="Optional context for your team">
+                    <label for="detailPayload">Payload builder</label>
+                    <textarea id="detailPayload" rows="5" placeholder='Optional JSON payload (e.g. {"channel": "123", "reason": "Automated"})'></textarea>
+                    <div class="detail-options">
+                        <label><input type="checkbox" id="optionConfirm"> Require manual confirmation</label>
+                        <label><input type="checkbox" id="optionLog"> Mirror to owner logs</label>
+                    </div>
+                    <button type="submit" class="primary-btn" id="queueButton" {% if not guilds %}disabled{% endif %}>Queue command</button>
+                    <p class="queue-status" id="queueStatus">Queued commands are processed by the background bot worker.</p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const COMMAND_GROUPS = {{ command_groups | tojson }};
+        const ADMIN_GUILDS = {{ guilds | tojson }};
+        const QUEUE_ENDPOINT = "{{ url_for('api_command_queue') }}";
+        const CSRF_TOKEN = "{{ csrf_token }}";
+        const commandListEl = document.getElementById('commandList');
+        const searchInput = document.getElementById('commandSearch');
+        const moduleSelect = document.getElementById('moduleFilter');
+        const detailName = document.getElementById('detailName');
+        const detailDescription = document.getElementById('detailDescription');
+        const detailModule = document.getElementById('detailModule');
+        const detailPermission = document.getElementById('detailPermission');
+        const detailPayload = document.getElementById('detailPayload');
+        const detailNotes = document.getElementById('detailNotes');
+        const detailGuild = document.getElementById('detailGuild');
+        const queueStatus = document.getElementById('queueStatus');
+        const queueButton = document.getElementById('queueButton');
+        const confirmCheckbox = document.getElementById('optionConfirm');
+        const logCheckbox = document.getElementById('optionLog');
+        let selectedCommand = null;
+        const flattenCommands = () => {
+            const entries = [];
+            COMMAND_GROUPS.forEach(group => {
+                group.commands.forEach(cmd => {
+                    entries.push({
+                        id: `${group.name}-${cmd.name}`,
+                        module: group.name,
+                        badge: group.badge,
+                        description: cmd.description,
+                        permissions: cmd.permissions,
+                        name: cmd.name,
+                    });
+                });
+            });
+            return entries;
+        };
+        const COMMANDS = flattenCommands();
+
+        function renderCommands() {
+            const term = (searchInput.value || '').toLowerCase();
+            const moduleFilter = moduleSelect.value;
+            const frag = document.createDocumentFragment();
+            COMMANDS.filter(cmd => {
+                const matchesTerm = cmd.name.toLowerCase().includes(term) || cmd.description.toLowerCase().includes(term);
+                const matchesModule = moduleFilter === 'all' || moduleFilter === cmd.module;
+                return matchesTerm && matchesModule;
+            }).forEach(cmd => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'command-row';
+                button.dataset.command = cmd.name;
+                button.innerHTML = `
+                    <div>
+                        <p class="cmd-name">${cmd.name}</p>
+                        <p class="cmd-description">${cmd.description}</p>
+                    </div>
+                    <div class="cmd-meta">
+                        <span>${cmd.module}</span>
+                        <span>${cmd.permissions}</span>
+                    </div>
+                `;
+                button.addEventListener('click', () => selectCommand(cmd));
+                frag.appendChild(button);
+            });
+            commandListEl.innerHTML = '';
+            if (!frag.childNodes.length) {
+                const empty = document.createElement('p');
+                empty.className = 'empty-copy';
+                empty.textContent = 'No commands match your filters.';
+                commandListEl.appendChild(empty);
+            } else {
+                commandListEl.appendChild(frag);
+            }
+        }
+
+        function selectCommand(cmd) {
+            selectedCommand = cmd;
+            detailName.textContent = cmd.name;
+            detailDescription.textContent = cmd.description;
+            detailModule.textContent = cmd.module;
+            detailPermission.textContent = cmd.permissions;
+            queueStatus.textContent = 'Queued commands are processed by the background bot worker.';
+            queueStatus.classList.remove('error');
+        }
+
+        document.getElementById('commandForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!selectedCommand) {
+                queueStatus.textContent = 'Select a command first.';
+                queueStatus.classList.add('error');
+                return;
+            }
+            if (!detailGuild.value) {
+                queueStatus.textContent = 'Select a guild first.';
+                queueStatus.classList.add('error');
+                return;
+            }
+            queueButton.disabled = true;
+            queueButton.textContent = 'Queuing...';
+            queueStatus.textContent = 'Sending request...';
+            queueStatus.classList.remove('error');
+            const payloadText = detailPayload.value.trim();
+            let payloadValue = payloadText;
+            if (payloadText) {
+                try {
+                    payloadValue = JSON.parse(payloadText);
+                } catch {
+                    payloadValue = payloadText;
+                }
+            } else {
+                payloadValue = '';
+            }
+            const body = {
+                command: selectedCommand.name,
+                guild_id: detailGuild.value,
+                payload: payloadValue,
+                notes: detailNotes.value,
+                options: {
+                    require_confirmation: confirmCheckbox.checked,
+                    mirror_log: logCheckbox.checked,
+                },
+            };
+            try {
+                const response = await fetch(QUEUE_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': CSRF_TOKEN,
+                    },
+                    body: JSON.stringify(body),
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to queue command');
+                }
+                queueStatus.textContent = `${selectedCommand.name} queued for ${detailGuild.options[detailGuild.selectedIndex].text}.`;
+                queueStatus.classList.remove('error');
+                detailNotes.value = '';
+                // keep payload for repeated runs
+            } catch (err) {
+                queueStatus.textContent = err.message;
+                queueStatus.classList.add('error');
+            } finally {
+                queueButton.disabled = false;
+                queueButton.textContent = 'Queue command';
+            }
+        });
+
+        searchInput.addEventListener('input', renderCommands);
+        moduleSelect.addEventListener('change', renderCommands);
+        renderCommands();
+        if (COMMANDS.length) {
+            selectCommand(COMMANDS[0]);
+        }
+        if (!ADMIN_GUILDS.length) {
+            queueStatus.textContent = 'Invite the bot to a guild to start queuing commands.';
+            queueStatus.classList.add('error');
+        }
+    </script>
+</body>
+</html>
