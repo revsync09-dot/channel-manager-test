@@ -1082,13 +1082,15 @@ def validate_oauth_env():
 
 
 def login_required(f):
-    """Decorator to require login"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user' not in session:
-            return redirect(url_for('login'))
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            # API routes dürfen NICHT redirecten!
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "unauthorized"}), 401
+
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return decorated_function
+
 
 
 def get_discord_user(access_token):
