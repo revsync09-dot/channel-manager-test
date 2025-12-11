@@ -911,3 +911,230 @@ body {
     padding: 1.25rem;
   }
 }
+
+/* Command Center specific layout */
+.command-center-body {
+  flex-direction: column;
+}
+
+.command-center-main {
+  width: 100%;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.command-center-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 2rem;
+  border-radius: 34px;
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(1, 3, 10, 0.9));
+  box-shadow: 0 35px 70px rgba(0, 0, 0, 0.4);
+}
+
+.command-hero-actions {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.command-hero-actions img {
+  width: 70px;
+  height: 70px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  object-fit: cover;
+}
+
+.command-hero-buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.command-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.command-meta-grid article {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.command-workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 1.25rem;
+  min-height: 520px;
+}
+
+.command-list-panel {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.command-list-panel .list-head {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.command-list-panel label {
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+.command-list-panel input,
+.command-list-panel select {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-primary);
+  padding: 0.65rem;
+}
+
+.command-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.command-row {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.command-row:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateX(2px);
+}
+
+.cmd-name {
+  font-weight: 600;
+}
+
+.cmd-description {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin-top: 0.2rem;
+}
+
+.cmd-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  text-align: right;
+  color: var(--text-soft);
+}
+
+.command-detail-panel {
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(1, 3, 10, 0.55);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.detail-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.detail-form label {
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--text-soft);
+  text-transform: uppercase;
+}
+
+.detail-form select,
+.detail-form input,
+.detail-form textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-primary);
+  padding: 0.65rem;
+}
+
+.detail-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.queue-status {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.queue-status.error {
+  color: #f87171;
+}
+
+@media (max-width: 1200px) {
+  .command-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .command-center-main {
+    padding: 1.5rem;
+  }
+
+  .command-center-hero {
+    flex-direction: column;
+  }
+}

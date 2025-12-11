@@ -93,7 +93,7 @@
             <div class="hero-actions">
                 <a class="primary-btn" href="https://discord.com/oauth2/authorize?client_id=1446565037857574924&scope=bot%20applications.commands&permissions=8" target="_blank">Invite bot</a>
                 <a class="primary-btn ghost" href="{{ url_for('login') }}">OAuth portal</a>
-                <a class="primary-btn ghost" href="#owner-logs">Audit logging</a>
+                <a class="primary-btn ghost" href="{{ url_for('command_center') }}">Command Studio</a>
                 <form method="POST" action="{{ url_for('set_locale') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <label class="sr-only" for="locale-select">Locale</label>
