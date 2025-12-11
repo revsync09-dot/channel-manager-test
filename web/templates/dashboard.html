@@ -136,7 +136,7 @@
                                 {% set icon_url = None %}
                             {% endif %}
                             {% set perms = guild.get('permissions', 0) | int %}
-                            {% set owner_tag = 'Bot Master' if perms & 0x8 else 'Server Admin' %}
+                            {% set owner_tag = 'Bot Master' if is_owner else 'Server Admin' %}
                             <article class="server-card" data-name="{{ guild.name|lower }}">
                                 <div class="server-card-head">
                                     {% if icon_url %}
